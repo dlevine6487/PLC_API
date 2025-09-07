@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Active Alarms</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="viewer-body">
+    <div class="content-card">
+        <div class="card-header">
+            <h2>Current Active Alarms (<span id="active-alarms-count-viewer">0</span>)</h2>
+        </div>
+        <div class="table-container">
+            <table id="alarms-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Alarm #</th>
+                        <th>Timestamp</th>
+                        <th>Status</th>
+                        <th>Alarm Text</th>
+                        <th>Acknowledged</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="viewer-actions">
+            <button id="export-alarms-csv-btn" class="action-btn-secondary">Export to CSV</button>
+        </div>
+    </div>
+    <script src="alarms-renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "siemens-plc-dashboard",
+  "version": "1.0.0",
+  "description": "Modern desktop application for monitoring Siemens S7-series PLCs.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "postinstall": "electron-rebuild"
+  },
+  "author": "Your Name",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^11.1.2",
+    "electron": "28.3.0",
+    "node-fetch": "^3.3.2",
+    "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "electron-rebuild": "^3.2.9"
+  }
+}

@@ -1,0 +1,52 @@
+nitial Interaction & Verification
+Once the application launches, you should be greeted by the "Windows 1998 Classic" themed "drop zone":
+Verify Drop Zone:
+Confirm the drop zone has a deep navy background, white text, and classic 3D-beveled borders.
+Load Configuration Files:
+Locate the sample TIA Portal VCI files (.xml for Tag Tables/Data Blocks, and your plain-text .s7dcl snippet saved as a .s7dcl file).
+Drag and drop these files from your file explorer directly onto the Electron application window.
+If parsing is successful, the drop zone should fade out, and the main dashboard should appear. If there are parsing errors, an alert will be displayed.
+Verify Main Dashboard and PLC Connection:
+Observe the "Windows 1998 Classic" theme applied to the entire dashboard (backgrounds, panels, buttons).
+Check the "System Overview" panel for initial counts of "Active Tags" and "Data Blocks."
+Connect to PLC: Click the "Connect" button in the header. A modal dialog will appear.
+The default IP address (192.168.0.1) should be pre-filled.
+Click "Connect."
+The "Connection Status" in the header and sidebar should update to "Connected" (green) with a mock Session ID.
+The tables in the "All Tags (Live Values)" and "Tag Look Up" sections should start populating with mock live data.
+Important: Since we're using a mock PLC API, actual network communication to a physical PLC is not occurring at this stage. The mock API simulates responses.
+Test Interactive Features:
+Write Button: In the "Tag Look Up" table, select a Data Block from the dropdown. For tags marked as writable, click the "Write" button. A modal should appear with the tag name. Enter a new value and click "Write to PLC." Observe the console output in your terminal for mock write operations.
+Log Button: For any tag, click the "Log" button. You should see a brief yellow flash on the button, and a console log indicating a manual log event. This data is now being saved to your local history.db.
+Plot Button: For numeric tags, click the "Plot" button. It should visually change (radio dot).
+Open Viewer Windows:
+In the sidebar, click on "History Table," "History Graph," "Syslog," "Alarms," and "Diagnostic Buffer" to open their respective windows.
+Verify they adhere to the "Windows 1998 Classic" theme.
+History Table: Should display logged data, dynamically updating. Test changing the "Last X Minutes" dropdown.
+History Graph: Should display data for any tags you previously clicked "Plot" for. Test plotting/unplotting tags from the main window and observe the graph updating.
+Syslog/Diagnostic Buffer: Should display live-polled mock log entries (last 50).
+Alarms: Should display mock active alarms. Test the "Acknowledge" button for an alarm.
+Test Export/Report Functions:
+In the main dashboard, click "Generate Live Report" to create a PDF.
+In each viewer window, click the "Export to CSV" (or "Save as Text") button to save their current data.
+VI. Troubleshooting Tips
+"Error parsing files" alert:
+Double-check that your .xml and .s7dcl files are correctly formatted as per our discussions. Even small XML syntax errors can break xml2js.
+Ensure the .s7dcl file follows the assumed simple DATA_BLOCK VAR ... END_VAR structure.
+Check your terminal for more detailed parsing errors from main.js.
+"PLC not connected" or connection errors:
+Ensure npm start is running and main.js is active. The mock API is internal to the app.
+Verify the IP address entered in the connection modal is valid (even for the mock, a correctly formatted IP is expected).
+Check the terminal for errors originating from the SiemensPLC_API class.
+UI not appearing correctly/missing styles:
+Ensure styles.css is in the correct location (same directory as the HTML files).
+Check your browser's developer tools (F12) for any CSS loading errors or JavaScript errors in the console.
+npm install or npm run postinstall errors:
+These often indicate issues with Node.js versions, build tools (like Python or Visual Studio Build Tools for Windows), or corrupted node_modules.
+Try deleting node_modules and package-lock.json, then run npm install again.
+Ensure your Node.js version is compatible with Electron 28.3.0.
+For Windows, ensure you have the correct Visual Studio Build Tools installed if native modules fail to build.
+Viewer windows don't open:
+Check the main process terminal for console.error messages when attempting to open a viewer.
+Ensure the HTML and preload .js files for the viewers are present in the correct directory.
+Check the developer tools (Ctrl+Shift+I or F12) of the main window for any ipcRenderer related errors.

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Tag History</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="viewer-body">
+    <div class="content-card">
+        <div class="card-header">
+            <h2>Tag Value History</h2>
+            <select id="history-retention-select" class="lookup-select">
+                <option value="1">Last 1 Minute</option>
+                <option value="5">Last 5 Minutes</option>
+                <option value="10" selected>Last 10 Minutes</option>
+                <option value="20">Last 20 Minutes</option>
+            </select>
+        </div>
+        <div class="table-container">
+            <table id="history-table">
+                <thead><tr><th>Tag Name</th><th>Value</th><th>Timestamp</th><th>Quality</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="viewer-actions">
+            <button id="export-history-btn" class="action-btn-secondary">Export to CSV</button>
+        </div>
+    </div>
+    <script src="history-renderer.js"></script>
+</body>
+</html>

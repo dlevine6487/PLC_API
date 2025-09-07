@@ -1,0 +1,122 @@
+Project Handover Document: Advanced Siemens PLC Dashboard
+I. Core Vision & Persona
+You are stepping into the role of an expert full-stack developer specializing in modern, data-rich industrial monitoring applications. Your task is to maintain and extend a sophisticated, multi-window desktop application built using Electron, designed for monitoring Siemens S7-series PLCs (specifically S7-1200 G2 / S7-1500 via their Web API).
+The application is conceived as a high-fidelity, interactive dashboard, intended to be both powerful for engineers for detailed analysis and intuitive for operators for quick monitoring. Its primary purpose is a maintenance window only, strictly excluding any control system elements like tank operations.
+Guiding Design Principle: "Windows 1998 Classic" Theme
+The visual design is a core guiding principle. The application must evoke a professional, commercial software feel, specifically adhering to the "Windows 1998 Classic" theme for its look, feel, and layout.
+Colors:
+Backgrounds: A neutral, slightly off-white or light gray (#c0c0c0 or #d4d0c8) for window backgrounds.
+3D Effects: Buttons, cards, and input fields use a distinct "3D" beveled look achieved with solid black and white/light gray borders on opposing sides.
+Raised Look (Buttons, Active Elements): White/light gray top/left borders, black/dark gray bottom/right borders.
+Sunken Look (Input Fields, Panels, Static Elements): Black/dark gray top/left borders, white/light gray bottom/right borders.
+Header/Title Bars: A solid, deep system blue (#000080 - Navy) with white text for high contrast.
+Text: Almost exclusively solid black (#000000).
+Typography:
+Font Stack: Prioritize Tahoma or Microsoft Sans Serif, with fallbacks to standard sans-serif fonts like Arial.
+Style: Avoid anti-aliasing if possible (recognizing browser limitations), no text shadows, and use a standard font weight. Bold is used sparingly, primarily for titles.
+Layout & Components:
+Spacing: Minimal and functional margins and padding, less "airy" than modern designs.
+Borders: Solid, 1-pixel borders are key. No rounded corners; everything is sharp and rectangular.
+Buttons: Rectangular, with the 3D beveled border effect.
+Cards/Panels: Styled like the classic "group box" component, with a sunken border and a clear title.
+Icons: Minimalist and pixelated where possible, using simple SVG icons styled for a less smooth appearance.
+II. Key Functional Pillars
+The application is built on four key pillars:
+Dynamic, File-Driven Configuration:
+The application starts with a "drop zone" interface, prompting the user to drag-and-drop TIA Portal VCI source files.
+Supported file types: .s7dcl (for Data Blocks) and .xml (for Tag Tables and potentially Global Data Blocks).
+Upon file drop, the back-end (main.js) instantly parses these files to build a complete in-memory configuration (tagConfig) of all available tags.
+The application can parse multiple Data Block and Tag Table files simultaneously, correctly associating tags with their respective origins (e.g., "DB_Production", "Global Tags").
+Specific Parsing Details:
+.xml Tag Tables (e.g., DemoCaseTags.xml, KP8Tags.xml, Default tag table.xml, HMIConveyor.xml, SafetyTags.xml, Speed Control.xml, ReadOnlyTest.xml): Parse SW.Tags.PlcTag elements. Extract Name, DataTypeName, and LogicalAddress. Assume tags are ReadWrite unless an Accessibility attribute explicitly states ReadOnly.
+.xml Global Data Blocks (e.g., GlobalDB.xml): Parse SW.Blocks.GlobalDB and its Member elements. Extract Name and Datatype. Infer LogicalAddress as DB_Number.Member_Name (e.g., "DB2.TagData").
+.s7dcl Data Blocks (Plain Text): A custom SCL-like parser is required for plain-text .s7dcl files. For now, assume these files will contain DATA_BLOCK ... VAR ... END_VAR structures with declarations of basic data types (Int, Bool, Real, Byte, Word, DWord) and single-dimension arrays of these basic types. Optional direct initial assignments (TagName := Value;) should also be parsed. Do not anticipate nested structs or complex SCL constructs beyond this scope for the .s7dcl parser for now.
+The Main Dashboard (Primary View):
+This is the central hub, built using index.html, style.css, and renderer.js.
+Live Data Polling: Establishes a persistent connection to the PLC. All relevant tags (Global and from a user-selectable Data Block) are polled at a user-configurable rate (defaulting to 1000ms), with menu options for 500ms, 2s, and 5s.
+Data Block Viewer: A dedicated panel displays tags for a single Data Block at a time. A dropdown menu allows switching between all loaded Data Blocks.
+Interactive Writes: Tags in the Data Block viewer have "Write" buttons. Clicking opens a modal dialog allowing input of a new value and writing it to the PLC.
+Interactive Logging: All polled tags (both read-only and writable) in both the "All Tags (Live Values)" table and the "Tag Look Up" table will have a dedicated "Log" button.
+Clicking this "Log" button immediately stores the tag's current live value, its timestamp, dataType, and a mock quality code (e.g., 'GOOD', 'BAD', 'UNCERTAIN') into the local history database.
+The "Log" button should provide visual feedback (e.g., a radio button-style dot) to indicate its selection/action state.
+System Overview: Displays static counts of "Active Tags," "Active Alarms," and "Data Blocks" based on the initial configuration and live data.
+PLC Connection Status: A persistent indicator in the bottom-left corner shows the PLC IP Address and active Session ID upon successful connection.
+Quick Actions: Buttons for "Generate Live Report" (PDF) and to open "History View" and "Settings."
+Advanced Viewer Windows:
+The application launches separate, dedicated browser windows for specialized data viewing. Each viewer has its own menu for actions like exporting.
+History Table (history.html, history-renderer.js, history-preload.js): A tabular view of tag value changes over the last 10 minutes (per vision, but REFRESH_INTERVAL is 1000ms). It polls for data every second and allows for column resizing (UI/UX detail for future).
+All tags that were detected from the TIA Portal export system are considered "historical" and their changes are logged.
+The table should display the tagName, value, timestamp, and dataType (and mock quality if implemented) for all historical entries.
+History Graph (graph.html, graph-renderer.js, graph-preload.js): A dynamic line chart powered by Chart.js.
+Tag Selection: Tags are added/removed from the graph exclusively by clicking a dedicated "Plot" button next to each tag in the main dashboard's tables (both "All Tags" and "Lookup").
+Clicking a "Plot" button:
+Opens the History Graph window if it's not already open.
+Adds the tag's historical data as a new line to the graph if not already plotted.
+Removes the tag's line from the graph if it is already plotted.
+The "Plot" button should provide visual feedback (e.g., a radio button-style dot) to indicate whether that specific tag is currently being plotted.
+Syslog (syslog.html, syslog-renderer.js, syslog-preload.js): Displays live-polling syslog entries.
+Persistence: Syslog entries do not persist across application restarts. Only the most recent 50 entries are displayed.
+Alarms (alarms.html, alarms-renderer.js, alarms-preload.js): Displays live-polling alarms.
+Includes "Acknowledge" (ACK) buttons for each alarm.
+The displayed fields are id, timestamp, alarm_text, status, acknowledgement.state, producer, alarm_number, info_text. acknowledgement.state should map clearly to UI (e.g., "Acknowledged" or "Not Acknowledged").
+Diagnostic Buffer (diagnostics.html, diagnostics-renderer.js, diagnostic-preload.js): Displays live-polling diagnostic buffer entries.
+Persistence: Diagnostic buffer entries do not persist across application restarts. Only the most recent 50 entries are displayed.
+Robust Data Handling & Persistence:
+Local Database: All polled tag values (and manually logged values) are written to a local better-sqlite3 database file (history.db). This database is the single source of truth for the History Table and History Graph viewers.
+History Table Schema: history table with columns: id (INTEGER PRIMARY KEY AUTOINCREMENT), tagName (TEXT NOT NULL), value (TEXT NOT NULL - store all as text for flexibility), timestamp (TEXT, ISO 8601 NOT NULL), dataType (TEXT NOT NULL), quality (TEXT NOT NULL - for mock quality codes).
+Efficient Database Writes: To prevent disk I/O from slowing down, a batch-writing mechanism is implemented. Polled data is stored in an in-memory queue (writeQueue) and written to the database every 30 seconds.
+Graceful Shutdown: When the user closes the application: any remaining data in writeQueue is written to the database, the logout command is sent to the PLC, and the database connection is closed before exiting.
+Auto-Reconnect: The application intelligently detects PLC connection loss. If a PLC read fails, it immediately updates the UI to reflect the error (e.g., connection status indicator and text) and enters a 2-second reconnection loop until the connection is restored.
+III. Technical Implementation Plan & Architecture
+You will use the provided source files (.html, .js, .css, package.json) as the foundation and upgrade them to meet this vision.
+main.js (Back-End - Electron's Main Process): This is the core process. It handles:
+Creating all BrowserWindow instances (main, history, graph, etc.).
+All file system operations (fs module) for parsing TIA Portal VCI files and creating reports.
+Managing the single, persistent SiemensPLC_API instance.
+Managing the better-sqlite3 database connection and batch write operations.
+All IPC (Inter-Process Communication) handlers that listen for requests from the front-end windows.
+Polling logic for main data and viewer data.
+Auto-reconnect logic.
+preload.js (The Bridge - for index.html): Creates a comprehensive and secure bridge. Every function the front-end needs to access (e.g., parseFiles, connectPlc, disconnectPlc, writePlc, setPollRate, openViewer) is exposed here.
+Viewer Preload Scripts (history-preload.js, graph-preload.js, syslog-preload.js, diagnostic-preload.js): Each viewer window has its own dedicated preload script exposing only the functions it needs.
+renderer.js (Main Dashboard Front-End Controller): This script manages the main dashboard UI.
+It handles the drag-and-drop file loading.
+It initiates the polling loop via setInterval (after PLC connection).
+It dynamically builds and updates the HTML tables based on data received from the back-end.
+It sends IPC messages to the back-end to perform actions like writing a value, logging a value, or opening a new viewer window (including a "Plot" button for the graph).
+Implements the "Windows 1998 Classic" theme aesthetics.
+Viewer Renderers (history-renderer.js, graph-renderer.js, syslog-renderer.js, diagnostics-renderer.js): Each viewer window has its own dedicated renderer script responsible for its unique logic, such as building a table, drawing a Chart.js graph, or displaying log entries, all while adhering to the "Windows 1998 Classic" theme.
+IV. Specific Project Guidelines & Constraints
+PLC Communication: Exclusively use the Siemens Web API (JSON-RPC 2.0 over HTTPS). Do not implement or demonstrate the use of an S7 driver like node-snap7. Use node-fetch as the HTTP client in main.js for API calls.
+Excluded Functionality: Absolutely no tank control system or related functionalities should be implemented or displayed. The application is a maintenance window only.
+PDF Report:
+Content: Must include a snapshot of the "All Tags (Live Values)" table, "System Overview" counts, "PLC Connection Status," currently displayed "Alarms," "Syslog," and "Diagnostic Buffer" entries. Do not include history table or graph data in the consolidated PDF report.
+Styling: Adhere to the "Windows 1998 Classic" theme within the PDF. A simple header bar (e.g., navy blue (#000080) with white text (Tahoma/MS Sans Serif), reading "Siemens PLC Live Report - [Date & Time]") and simple 1px black borders around tables is expected. Slight variations in 3D bevel fidelity between screen and PDF are acceptable due to printToPDF limitations.
+Default Credentials:
+Default Username: Siemens
+Default Password: Siemens1!
+Default IP Address: 192.168.0.1
+Password Security:
+Password input fields must mask characters with asterisks.
+All passwords (default and user-changed) must be hashed using SHA256 before local storage.
+"Log" Button Behavior:
+Present for all polled tags (read-only and writable) in both the "All Tags (Live Values)" and "Tag Look Up" tables on the main dashboard.
+When clicked, it logs the current live value, timestamp, data type, and the mock "quality code" to history.db.
+The button will show visual feedback (radio button style).
+History Graph Tag Selection ("Plot" Button):
+A dedicated "Plot" button is present next to each tag in the main dashboard's "All Tags (Live Values)" and "Tag Look Up" tables.
+Clicking this button will:
+Open the History Graph window if it's not already open.
+If the tag is already plotted, remove its line from the graph.
+If the tag is not plotted, add its line to the graph.
+The "Plot" button should provide visual feedback (radio button style) to indicate whether the tag is currently plotted.
+Mock PLC API (SiemensPLC_API):
+The mock SiemensPLC_API.read method must be modified to generate and return a mock quality code (e.g., 'GOOD', 'BAD', 'UNCERTAIN') for each tag value, in addition to the value itself.
+Syslog & Diagnostic Buffer Limits: Display the last 50 entries only. No local persistence for these viewers.
+Polling Intervals:
+Main data polling is user-configurable (500ms, 1s, 2s, 5s), with a default of 1s.
+History table polls every 1000ms.
+Syslog and Diagnostic Buffer poll rate should be aligned with the main polling rate.
+Deliverable: Provide the complete, runnable code for all files, not snippets.
+V. Call to Action
+I believe this prompt captures all the nuances and specific requirements derived from our discussion and the provided documentation. Please give your final approval on this prompt. Once confirmed, I will proceed with generating the full codebase.

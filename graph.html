@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Tag History Graph</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.umd.min.js"></script>
+</head>
+<body class="viewer-body">
+    <div class="content-card">
+        <div class="card-header"><h2>Tag History Graph</h2></div>
+        <div class="table-container" style="padding: 1rem;"><canvas id="historyChart"></canvas></div>
+        <div class="viewer-actions">
+            <button id="export-graph-csv-btn" class="action-btn-secondary">Export Data (CSV)</button>
+        </div>
+    </div>
+    <script src="graph-renderer.js"></script>
+</body>
+</html>

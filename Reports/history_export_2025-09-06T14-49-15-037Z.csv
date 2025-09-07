@@ -1,0 +1,4 @@
+id,tagName,value,timestamp,dataType,quality,tag_name
+"3","MyDataBlock.MyBoolean2","-","2025-09-06T14:45:29.134Z","Bool","UNKNOWN","MyDataBlock.MyBoolean2"
+"2","MyDataBlock.MyBoolean1","-","2025-09-06T14:45:27.276Z","Bool","UNKNOWN","MyDataBlock.MyBoolean1"
+"1","MyDataBlock.MyBoolean1","-","2025-09-06T14:45:24.308Z","Bool","UNKNOWN","MyDataBlock.MyBoolean1"

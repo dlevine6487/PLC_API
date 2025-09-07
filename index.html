@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Siemens PLC Dashboard</title>
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';"/>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Processing Files...</p>
+    </div>
+
+    <div id="drop-zone" class="drop-zone">
+        <div class="drop-zone-content">
+            <svg class="drop-zone-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+            <h1>Siemens PLC Dashboard</h1>
+            <p>Drag & Drop TIA Portal Files Here</p>
+            <span>(.xml and .s7dcl)</span>
+            <div class="splash-separator">or</div>
+            <button id="splash-load-files-btn" class="action-btn">Browse Files</button>
+        </div>
+    </div>
+
+    <div id="app-container" class="dashboard-container" style="display: none; opacity: 0;">
+        <aside class="panel left-panel">
+            <div class="panel-section">
+                <h2 class="panel-title">SYSTEM OVERVIEW</h2>
+                <div class="stat-cards-container">
+                    <div class="stat-card"><span class="stat-label">Active Tags</span><span id="active-tags-count" class="stat-number">0</span></div>
+                    <div class="stat-card"><span class="stat-label">Polling Rate</span><span id="polling-rate-display" class="stat-number">1s</span></div>
+                    <div class="stat-card"><span class="stat-label">Sources</span><span id="sources-count" class="stat-number">0</span></div>
+                </div>
+            </div>
+            <div class="panel-section">
+                <h2 class="panel-title">VIEWERS</h2>
+                <nav class="viewers-nav">
+                    <ul>
+                        <li><a href="#" id="view-alarms-btn"><i class="fa-solid fa-triangle-exclamation"></i> Alarms <span id="alarm-badge" class="notification-badge">0</span></a></li>
+                        <li><a href="#" id="view-diagnostics-btn"><i class="fa-solid fa-file-medical"></i> Diagnostic Buffer</a></li>
+                        <li><a href="#" id="view-syslog-btn"><i class="fa-solid fa-server"></i> Syslog</a></li>
+                        <li><a href="#" id="view-history-btn"><i class="fa-solid fa-table-list"></i> History Table</a></li>
+                        <li><a href="#" id="view-debug-btn"><i class="fa-solid fa-bug"></i> API Debug</a></li>
+                    </ul>
+                </nav>
+            </div>
+            <div class="panel-section connection-panel">
+                <h2 class="panel-title">PLC CONNECTION</h2>
+                <div class="connection-details">
+                    <p><strong>IP Address:</strong> <span id="status-ip">N/A</span></p>
+                    <p><strong>Session ID:</strong> <span id="status-session">N/A</span></p>
+                    <div class="connection-status-line">
+                        <span id="connection-status-indicator" class="status-dot"></span>
+                        <span id="connection-status-text">Disconnected</span>
+                    </div>
+                    <button id="connect-btn" class="action-btn">Connect</button>
+                </div>
+            </div>
+        </aside>
+        <main class="panel center-panel">
+            <header class="center-panel-header">
+                <h1 class="dashboard-title">Siemens PLC Dashboard</h1>
+                <div class="header-controls">
+                    <select id="poll-rate-select" class="poll-rate-select">
+                        <option value="1000" selected>Poll: 1s</option>
+                        <option value="2000">Poll: 2s</option>
+                        <option value="5000">Poll: 5s</option>
+                    </select>
+                    <button id="load-files-btn" class="action-btn-secondary">Load New Files</button>
+                </div>
+            </header>
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>All Tags (Live Values)</h2>
+                    <span class="update-status">Updated <span id="last-updated">...</span></span>
+                </div>
+                <div class="table-container">
+                    <table id="all-tags-table">
+                        <thead><tr><th>SOURCE</th><th>TAG NAME</th><th>VALUE</th><th>TYPE</th><th>ACTIONS</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+        <aside class="panel right-panel">
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Tag Look Up</h2>
+                    <select id="lookup-select" class="lookup-select"></select>
+                </div>
+                <div class="table-container">
+                    <table id="lookup-table">
+                        <thead><tr><th>VARIABLE</th><th>VALUE</th><th>ACTION</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="content-card">
+                 <div class="card-header"><h2>Quick Actions</h2></div>
+                 <div class="quick-actions-container">
+                    <button id="clear-history-btn" class="action-btn-secondary">Clear All Historical Logs</button>
+                    <button id="clear-trends-btn" class="action-btn-secondary">Clear All Trends</button>
+                    <button id="ack-all-alarms-btn" class="action-btn-secondary">Acknowledge All Alarms</button>
+                 </div>
+            </div>
+        </aside>
+    </div>
+
+    <div id="connect-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Connect to PLC</h3>
+            <p>Enter the IP Address of the Siemens PLC.</p>
+            <input type="text" id="connect-modal-ip-input" class="modal-input" placeholder="e.g., 192.168.0.1">
+            <div class="modal-actions">
+                <button id="connect-modal-cancel-btn" class="action-btn-secondary">Cancel</button>
+                <button id="connect-modal-confirm-btn" class="action-btn">Connect</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tag-actions-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Tag Actions</h3>
+            <p>Tag: <strong id="actions-modal-tag-name"></strong></p>
+            <div id="actions-modal-write-section" class="modal-section" style="display: none;">
+                <h4>Write New Value</h4>
+                <input type="text" id="actions-modal-input" class="modal-input" placeholder="Enter new value">
+                <button id="actions-modal-confirm-write-btn" class="action-btn">Write to PLC</button>
+            </div>
+            <p id="actions-modal-readonly-notice" class="readonly-notice" style="display: none;">This tag is Read-Only.</p>
+            <div class="modal-section">
+                <h4>Data Collection</h4>
+                <div class="modal-toggle-buttons">
+                    <button id="actions-modal-log-btn" class="toggle-btn">Enable Historical Logging</button>
+                    <button id="actions-modal-trend-btn" class="toggle-btn">Enable Trending</button>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button id="actions-modal-close-btn" class="action-btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toast-container" class="toast-container"></div>
+    <script src="renderer.js"></script>
+</body>
+</html>

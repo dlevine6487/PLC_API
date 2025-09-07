@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>API Debug Viewer</title>
+    <link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body class="viewer-body">
+    <div class="content-card">
+        <div class="card-header">
+            <h2>API Debug Viewer</h2>
+            <div class="viewer-actions">
+                <button id="export-debug-btn" class="action-btn-secondary" style="width: auto; padding: 8px 16px;">Export to JSON</button>
+                <button id="refresh-debug-btn" class="action-btn-secondary" style="width: auto; padding: 8px 16px;">Refresh</button>
+            </div>
+        </div>
+        <div class="debug-container side-by-side">
+            <div class="debug-section">
+                <h3>Last Request Sent to PLC</h3>
+                <pre id="last-request-content"></pre>
+            </div>
+            <div class="debug-section">
+                <h3>Last Response Received from PLC</h3>
+                <pre id="last-response-content"></pre>
+            </div>
+        </div>
+    </div>
+    <script src="../renderer/debug-renderer.js"></script>
+</body>
+</html>
