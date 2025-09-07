@@ -232,12 +232,12 @@ function createMainWindow() {
         width: 1600,
         height: 900,
         webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
+            preload: path.join(__dirname, 'views/main/preload.js'),
             contextIsolation: true,
             nodeIntegration: false
         }
     });
-    mainWindow.loadFile('index.html');
+    mainWindow.loadFile(path.join(__dirname, 'views/main/index.html'));
     mainWindow.on('closed', () => { mainWindow = null; });
 }
 
@@ -513,12 +513,12 @@ ipcMain.on('open-viewer', (event, viewerName) => {
         height: 600,
         parent: mainWindow,
         webPreferences: {
-            preload: path.join(__dirname, `${viewerName}-preload.js`),
+            preload: path.join(__dirname, `views/${viewerName}/preload.js`),
             contextIsolation: true,
             nodeIntegration: false
         }
     });
-    win.loadFile(`${viewerName}.html`);
+    win.loadFile(path.join(__dirname, `views/${viewerName}/index.html`));
     win.on('closed', () => { delete viewerWindows[viewerName]; });
     viewerWindows[viewerName] = win;
 });
