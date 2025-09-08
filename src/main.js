@@ -429,6 +429,55 @@ ipcMain.handle('clear-session', async () => {
     }
 });
 
+ipcMain.handle('db:get-all-historical-tag-names', () => {
+    try {
+        const stmt = db.prepare('SELECT DISTINCT tagName FROM history');
+        const rows = stmt.all();
+        return rows.map(r => r.tagName);
+    } catch (error) {
+        console.error("[DB ERROR] Failed to get all historical tag names:", error);
+        return []; // Return empty array on error
+    }
+});
+
+ipcMain.handle('db:get-history', (event, { tagNames, limit }) => {
+    if (!tagNames || tagNames.length === 0) {
+        return {};
+    }
+    try {
+        const placeholders = tagNames.map(() => '?').join(',');
+        const sql = `
+            SELECT id, tagName, value, timestamp, dataType, quality
+            FROM (
+                SELECT
+                    *,
+                    ROW_NUMBER() OVER (PARTITION BY tagName ORDER BY timestamp DESC) as rn
+                FROM history
+                WHERE tagName IN (${placeholders})
+            )
+            WHERE rn <= ?
+            ORDER BY timestamp DESC
+        `;
+
+        const stmt = db.prepare(sql);
+        const rows = stmt.all(...tagNames, limit);
+
+        // Group results by tagName
+        const groupedResults = {};
+        for (const row of rows) {
+            if (!groupedResults[row.tagName]) {
+                groupedResults[row.tagName] = [];
+            }
+            groupedResults[row.tagName].push(row);
+        }
+        return groupedResults;
+
+    } catch (error) {
+        console.error("[DB ERROR] Failed to get history:", error);
+        return {}; // Return empty object on error
+    }
+});
+
 ipcMain.handle('plc:connect', async (event, ip) => {
     plcApiInstance = new SiemensPLC_API(ip, plcConfig.username, plcConfig.password);
     const success = await plcApiInstance.login();
