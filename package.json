@@ -5,7 +5,7 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "test": "./node_modules/.bin/playwright test",
+    "test": "xvfb-run --auto-servernum --server-args='-screen 0 1280x1024x24' ./node_modules/.bin/playwright test",
     "postinstall": "electron-rebuild"
   },
   "author": "Your Name",

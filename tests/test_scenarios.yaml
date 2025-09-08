@@ -1,62 +1,64 @@
 test_cases:
-  - id: TC_LOGIN_001
-    description: "Verify that entering valid credentials logs the user in successfully."
-    # This test case simulates filling out a login form and clicking the login button.
-    actions:
-      - type: fill
-        selector: "#username"
-        value: "Siemens"
-      - type: fill
-        selector: "#password"
-        value: "Siemens1!"
-      - type: click
-        selector: "button#login-button"
-    # The backend check verifies that the correct API call was made.
-    backend_check:
-      endpoint: "/api/v1/login"
-      method: "POST"
-      expected_status: 200
+  - id: TC_APP_LOAD_AND_CONNECT_001
+    description: "Verify app launch, file load simulation, and connection attempt."
     resolutions:
-      - [1024, 768]
-      - [1920, 1080]
-
-  - id: TC_MAIN_START_PROCESS_001
-    description: "Verify that clicking the 'Start Process' button initiates the process."
-    # This simulates a user clicking a primary action button on the main dashboard.
+      - [1600, 900]
     actions:
-      - type: click
-        selector: "button#start-process-button"
-    backend_check:
-      endpoint: "/api/v1/process/start"
-      method: "POST"
-      expected_status: 202 # 202 Accepted is a good code for starting a long-running process.
-    resolutions:
-      - [1280, 720]
-      - [1920, 1080]
+      # Step 1: Verify the initial splash screen is visible
+      - type: "wait_for_selector"
+        selector: "dropZone" # Using POM logical name
+        description: "Wait for the initial file drop zone to be visible."
 
-  - id: TC_SETTINGS_DIALOG_001
-    description: "Verify the settings dialog opens and closes correctly."
-    # This tests UI-only functionality: opening and closing a modal dialog.
-    actions:
-      - type: click
-        selector: "button#settings-button" # Action to open the dialog
-      - type: click
-        selector: "button#close-settings-dialog-button" # Action to close it
-    # No backend check is needed as this is a pure UI interaction.
+      # Step 2: Mock the file load by directly manipulating the DOM
+      - type: "evaluate"
+        script: |
+          document.getElementById('drop-zone').style.display = 'none';
+          document.getElementById('app-container').style.display = 'grid';
+          document.getElementById('app-container').style.opacity = '1';
+        description: "Mock file load by forcing the dashboard to be visible."
+
+      # Step 3: Verify the main dashboard appears and the splash screen is gone
+      - type: "wait_for_selector"
+        selector: "appContainer" # Using POM logical name
+        description: "Wait for the main application container to be visible."
+      - type: "wait_for_hidden"
+        selector: "dropZone" # Using POM logical name
+        description: "Verify the file drop zone is now hidden."
+
+      # Step 4: VISUAL TEST - Take a screenshot of the loaded dashboard
+      - type: "screenshot"
+        name: "main-dashboard-loaded"
+        description: "Take a screenshot for visual verification."
+        selector: "page" # Special selector for page-level actions
+
+      # Step 5: Verify key dashboard elements are visible
+      - type: "wait_for_selector"
+        selector: "leftPanel" # Using POM logical name
+        description: "Check for the left panel."
+      - type: "wait_for_selector"
+        selector: "connectButton" # Using POM logical name
+        description: "Check for the 'Connect' button."
+
+      # Step 6: Initiate connection
+      - type: "click"
+        selector: "connectButton" # Using POM logical name
+        description: "Click the 'Connect' button."
+
+      # Step 7: Interact with the connection modal
+      - type: "wait_for_selector"
+        selector: "connectModal" # Using POM logical name
+        description: "Wait for the connection modal to appear."
+      - type: "fill"
+        selector: "connectModalIpInput" # Using POM logical name
+        value: "192.168.0.100"
+        description: "Enter IP address into the modal."
+      - type: "click"
+        selector: "connectModalConfirmButton" # Using POM logical name
+        description: "Click the 'Connect' button in the modal."
+
+      # Step 8: Verify the modal closes
+      - type: "wait_for_hidden"
+        selector: "connectModal" # Using POM logical name
+        description: "Verify the connection modal is now hidden."
+
     backend_check: null
-    resolutions:
-      - [800, 600]
-      - [1920, 1080]
-
-  - id: TC_LOGOUT_001
-    description: "Verify that clicking the 'Logout' button returns the user to the login screen."
-    # This tests the logout functionality.
-    actions:
-      - type: click
-        selector: "button#logout-button"
-    backend_check:
-      endpoint: "/api/v1/logout"
-      method: "POST"
-      expected_status: 200
-    resolutions:
-      - [1280, 720]
