@@ -29,5 +29,10 @@ export const
     actionsModalLogBtn = document.getElementById('actions-modal-log-btn'),
     actionsModalTrendBtn = document.getElementById('actions-modal-trend-btn'),
     actionsModalCloseBtn = document.getElementById('actions-modal-close-btn'),
+    writeConfirmModal = document.getElementById('write-confirm-modal'),
+    writeConfirmTagName = document.getElementById('write-confirm-tag-name'),
+    writeConfirmTagValue = document.getElementById('write-confirm-tag-value'),
+    writeConfirmCancelBtn = document.getElementById('write-confirm-cancel-btn'),
+    writeConfirmConfirmBtn = document.getElementById('write-confirm-confirm-btn'),
     loadingOverlay = document.getElementById('loading-overlay'),
     toastContainer = document.getElementById('toast-container');
