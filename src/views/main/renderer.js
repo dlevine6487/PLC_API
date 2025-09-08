@@ -257,24 +257,10 @@ document.addEventListener('DOMContentLoaded', () => {
     async function confirmWrite() {
         const { fullTagName, type } = currentActionTag;
         const rawValue = document.getElementById('actions-modal-input').value;
-        let typedValue;
-        const lowerType = (type || '').toLowerCase();
-        
-        if (lowerType.includes('bool')) {
-            const lowerVal = rawValue.toLowerCase();
-            if (lowerVal !== 'true' && lowerVal !== 'false' && lowerVal !== '1' && lowerVal !== '0') { return showToast('Invalid value for Bool. Use true/false.', 'error'); }
-            typedValue = (lowerVal === 'true' || lowerVal === '1');
-        } else if (lowerType.includes('int')) {
-            typedValue = parseInt(rawValue, 10);
-            if (isNaN(typedValue)) { return showToast('Invalid value for Int type.', 'error'); }
-        } else if (lowerType.includes('real')) {
-            typedValue = parseFloat(rawValue);
-            if (isNaN(typedValue)) { return showToast('Invalid value for Real type.', 'error'); }
-        } else {
-            typedValue = rawValue;
-        }
 
-        const result = await window.api.writePlc(fullTagName, typedValue);
+        // Backend now handles validation and conversion.
+        const result = await window.api.writePlc({ tagName: fullTagName, value: rawValue, type });
+
         if (result.success) {
             showToast('Write Successful!', 'success');
             flashTableCell(fullTagName);
