@@ -5,10 +5,10 @@ test_cases:
     actions:
       - type: fill
         selector: "#username"
-        value: "admin"
+        value: "Siemens"
       - type: fill
         selector: "#password"
-        value: "password123"
+        value: "Siemens1!"
       - type: click
         selector: "button#login-button"
     # The backend check verifies that the correct API call was made.
