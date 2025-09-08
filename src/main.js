@@ -1,6 +1,8 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const https = require('https');
 const path = require('path');
+const store = require('./state/store.js');
+const { registerIpcHandlers } = require('./main-process/ipc-handlers.js');
 const { SiemensPLC_API, initializeApi, getLastApiCall } = require('./api/siemens-plc.js');
 const fs = require('fs/promises');
 const xml2js = require('xml2js');
@@ -13,17 +15,8 @@ const PLC_CONFIG_PATH = path.join(app.getPath('userData'), 'plc-config.json');
 const SESSION_FILE_PATH = path.join(app.getPath('userData'), 'session.json');
 
 // --- Centralized State Management ---
-let mainWindow;
-let plcApiInstance = null;
-let plcConfig = {};
-let tagConfig = {};
-let liveValues = {};
-let pollTimer = null;
-const viewerWindows = {};
-let plottedTags = [];
-let mockAlarms = [];
-let activePollingTags = [];
-let pollingErrorCount = 0;
+// All state is now managed in src/state/store.js
+let mainWindow; // Keep mainWindow as a top-level reference for now.
 const MAX_POLLING_ERRORS = 5;
 
 // --- Database Setup ---
@@ -64,108 +57,63 @@ async function loadOrCreatePlcConfig() {
 // --- Main Application Lifecycle & Window Management ---
 function createMainWindow() {
     mainWindow = new BrowserWindow({
-        width: 1600,
-        height: 900,
+        width: 1600, height: 900,
         webPreferences: {
             preload: path.join(__dirname, 'views/main/preload.js'),
-            contextIsolation: true,
-            nodeIntegration: false
+            contextIsolation: true, nodeIntegration: false
         }
     });
     mainWindow.loadFile(path.join(__dirname, 'views/main/index.html'));
-    mainWindow.on('closed', () => { mainWindow = null; });
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+        store.setState({ mainWindow: null });
+    });
+    // Add mainWindow reference to the store so other modules can access it
+    store.setState({ mainWindow });
 }
 
 async function loadSavedSession() {
     try {
-        await fs.access(SESSION_FILE_PATH);
+        const { SESSION_FILE_PATH } = store.getState();
         const sessionData = await fs.readFile(SESSION_FILE_PATH, 'utf8');
         const savedConfig = JSON.parse(sessionData);
         if (Object.keys(savedConfig).length > 0) {
-            console.log('[Main] Found and loaded saved session.');
-            tagConfig = savedConfig;
+            store.setState({ tagConfig: savedConfig });
             return true;
         }
     } catch (error) {
-        console.log('[Main] No saved session found or error loading it.');
+        // It's okay if the file doesn't exist on first launch
     }
     return false;
 }
-
-const { registerIpcHandlers } = require('./main-process/ipc-handlers.js');
-
-app.whenReady().then(async () => {
-    fetch = (await import('node-fetch')).default;
-    initializeApi(fetch); // Initialize the PLC API module with fetch
-    plcConfig = await loadOrCreatePlcConfig();
-    createMainWindow();
-
-    // Register all IPC handlers
-    registerIpcHandlers({
-        // State variables
-        get mainWindow() { return mainWindow; },
-        get plcApiInstance() { return plcApiInstance; },
-        set plcApiInstance(val) { plcApiInstance = val; },
-        get plcConfig() { return plcConfig; },
-        get tagConfig() { return tagConfig; },
-        set tagConfig(val) { tagConfig = val; },
-        get liveValues() { return liveValues; },
-        set liveValues(val) { liveValues = val; },
-        get viewerWindows() { return viewerWindows; },
-        get plottedTags() { return plottedTags; },
-        set plottedTags(val) { plottedTags = val; },
-        get mockAlarms() { return mockAlarms; },
-        get activePollingTags() { return activePollingTags; },
-        set activePollingTags(val) { activePollingTags = val; },
-        // Constants and utils
-        db,
-        SESSION_FILE_PATH,
-        DEFAULT_PLC_IP,
-        // Functions
-        startPolling,
-        stopPolling,
-        pollMainData,
-    });
-
-    const menu = Menu.buildFromTemplate([ { label: 'File', submenu: [ { role: 'quit' } ] }, { label: 'View', submenu: [ { role: 'reload' }, { role: 'forceReload' }, { role: 'toggleDevTools' } ] } ]);
-    Menu.setApplicationMenu(menu);
-
-    mainWindow.webContents.on('did-finish-load', async () => {
-        const sessionLoaded = await loadSavedSession();
-        if (sessionLoaded) {
-            activePollingTags = Object.values(tagConfig).flatMap(source => source.tags || []).filter(tag => !tag.error);
-            mainWindow.webContents.send('session-loaded', tagConfig);
-        }
-    });
-});
-
-app.on('before-quit', async () => {
-    stopPolling();
-    if (plcApiInstance) await plcApiInstance.logout();
-    db.close();
-});
-app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 
 // --- Backend Polling Loop ---
 function startPolling(rate) {
     stopPolling();
     console.log(`[Main] Starting polling at ${rate}ms.`);
-    pollingErrorCount = 0; // Reset counter on new polling start
-    activePollingTags = Object.values(tagConfig).flatMap(source => source.tags || []).filter(tag => !tag.error);
-    pollTimer = setInterval(pollMainData, rate);
+    const { tagConfig } = store.getState();
+    const newActiveTags = Object.values(tagConfig).flatMap(source => source.tags || []).filter(tag => !tag.error);
+    const newPollTimer = setInterval(pollMainData, rate);
+    store.setState({ activePollingTags: newActiveTags, pollTimer: newPollTimer, pollingErrorCount: 0 });
 }
+
 function stopPolling() {
+    const { pollTimer } = store.getState();
     if (pollTimer) {
         clearInterval(pollTimer);
-        pollTimer = null;
+        store.setState({ pollTimer: null });
         console.log('[Main] Polling stopped.');
     }
 }
+
 async function pollMainData() {
+    const { plcApiInstance, activePollingTags } = store.getState();
     if (!plcApiInstance || !plcApiInstance.sessionId || activePollingTags.length === 0) return;
+
     try {
         const responses = await plcApiInstance.readMultipleVariables(activePollingTags);
-        pollingErrorCount = 0; // Reset counter on successful poll.
+        let currentLiveValues = { ...store.getState().liveValues };
+        let currentActiveTags = [...activePollingTags];
 
         if (responses && Array.isArray(responses)) {
             responses.forEach(response => {
@@ -173,46 +121,107 @@ async function pollMainData() {
                 if (response.error) {
                     if (response.error.message === 'Address does not exist') {
                         console.warn(`[PLC API] Tag does not exist on PLC: ${tagName}. Removing from poll list.`);
-                        liveValues[tagName] = { value: '-', quality: 'BAD_TAG' };
-                        activePollingTags = activePollingTags.filter(t => t.fullTagName !== tagName);
+                        currentLiveValues[tagName] = { value: '-', quality: 'BAD_TAG' };
+                        currentActiveTags = currentActiveTags.filter(t => t.fullTagName !== tagName);
                     } else {
-                        liveValues[tagName] = { value: '-', quality: 'READ_ERROR' };
+                        currentLiveValues[tagName] = { value: '-', quality: 'READ_ERROR' };
                     }
                 } else if ('result' in response) {
-                    const value = (response.result && typeof response.result === 'object' && 'value' in response.result)
-                        ? response.result.value
-                        : response.result;
-                    liveValues[tagName] = { value: value, quality: 'GOOD' };
+                    const value = (response.result?.value !== undefined) ? response.result.value : response.result;
+                    currentLiveValues[tagName] = { value, quality: 'GOOD' };
                 }
             });
         } else if (responses === null && plcApiInstance.sessionId) {
-             throw new Error("Invalid or null response from bulk read");
+            throw new Error("Invalid or null response from bulk read");
         }
 
+        store.setState({
+            liveValues: currentLiveValues,
+            activePollingTags: currentActiveTags,
+            pollingErrorCount: 0,
+            plcState: { connected: true, ip: plcApiInstance.config.plcIp, sessionId: plcApiInstance.sessionId }
+        });
 
-        if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('data-update', {
-                config: tagConfig, liveValues,
-                plcState: { connected: !!plcApiInstance.sessionId, ip: plcApiInstance.config.plcIp, sessionId: plcApiInstance.sessionId }
-            });
-        }
     } catch (error) {
+        let { pollingErrorCount } = store.getState();
         pollingErrorCount++;
         console.warn(`[Main] Polling attempt ${pollingErrorCount}/${MAX_POLLING_ERRORS} failed. Error: ${error.message}`);
+
         if (pollingErrorCount >= MAX_POLLING_ERRORS) {
-            console.error(`[Main] CRITICAL POLLING ERROR: Reached max retries (${MAX_POLLING_ERRORS}). Disconnecting.`);
+            console.error(`[Main] CRITICAL: Reached max polling errors. Disconnecting.`);
+            const currentPlcApi = store.getState().plcApiInstance;
             stopPolling();
-            if (plcApiInstance) plcApiInstance.sessionId = null;
-            if (mainWindow && !mainWindow.isDestroyed()) {
-                mainWindow.webContents.send('data-update', {
-                    config: tagConfig, liveValues: {},
-                    plcState: { connected: false, ip: plcApiInstance?.config.plcIp, error: 'Connection Lost' }
-                });
-            }
-            pollingErrorCount = 0; // Reset after disconnect
+            if (currentPlcApi) currentPlcApi.sessionId = null; // Invalidate session
+            store.setState({
+                liveValues: {},
+                plcApiInstance: currentPlcApi,
+                plcState: { connected: false, ip: currentPlcApi?.config.plcIp, error: 'Connection Lost' },
+                pollingErrorCount: 0
+            });
+        } else {
+            store.setState({ pollingErrorCount });
         }
     }
 }
 
 
-// IPC Handlers are now in a separate module
+// --- Application Lifecycle ---
+app.whenReady().then(async () => {
+    // Initialize
+    fetch = (await import('node-fetch')).default;
+    initializeApi(fetch);
+    const plcConfig = await loadOrCreatePlcConfig();
+
+    // Set initial state in the store
+    store.setState({
+        plcApiInstance: null,
+        plcConfig: plcConfig,
+        tagConfig: {},
+        liveValues: {},
+        pollTimer: null,
+        viewerWindows: {},
+        plottedTags: [],
+        mockAlarms: [],
+        activePollingTags: [],
+        pollingErrorCount: 0,
+        db: db,
+        SESSION_FILE_PATH: SESSION_FILE_PATH,
+        DEFAULT_PLC_IP: DEFAULT_PLC_IP,
+        mainWindow: null // will be set in createMainWindow
+    });
+
+    // Register IPC handlers, passing them the store and necessary functions
+    registerIpcHandlers(store, { startPolling, stopPolling, pollMainData });
+
+    // Create main window (which will also update the store with its reference)
+    createMainWindow();
+
+    // Setup Menu
+    const menu = Menu.buildFromTemplate([
+        { label: 'File', submenu: [{ role: 'quit' }] },
+        { label: 'View', submenu: [{ role: 'reload' }, { role: 'forceReload' }, { role: 'toggleDevTools' }] }
+    ]);
+    Menu.setApplicationMenu(menu);
+
+    // Final setup after window loads
+    mainWindow.webContents.on('did-finish-load', async () => {
+        const sessionLoaded = await loadSavedSession();
+        if (sessionLoaded) {
+            const { tagConfig } = store.getState();
+            const newActiveTags = Object.values(tagConfig).flatMap(source => source.tags || []).filter(tag => !tag.error);
+            store.setState({ activePollingTags: newActiveTags });
+            // The store will be responsible for notifying the renderer
+        }
+    });
+});
+
+app.on('before-quit', async () => {
+    stopPolling();
+    const { plcApiInstance } = store.getState();
+    if (plcApiInstance) await plcApiInstance.logout();
+    db.close();
+});
+
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
+});

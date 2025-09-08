@@ -4,11 +4,12 @@ const fs = require('fs/promises');
 const { SiemensPLC_API, getLastApiCall } = require('../api/siemens-plc.js');
 const fileParsers = require('../utils/file-parsers.js');
 
-function registerIpcHandlers(context) {
+function registerIpcHandlers(store, { startPolling, stopPolling, pollMainData }) {
 
     // --- File and Session Handlers ---
     ipcMain.handle('dialog:open-file', async () => {
-        const { canceled, filePaths } = await dialog.showOpenDialog(context.mainWindow, {
+        const { mainWindow } = store.getState();
+        const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
             properties: ['openFile', 'multiSelections'],
             filters: [{ name: 'TIA Portal Files', extensions: ['xml', 's7dcl'] }]
         });
@@ -42,158 +43,144 @@ function registerIpcHandlers(context) {
                     }
                 }
             } catch (e) {
-                console.error(`Error parsing file ${path.basename(filePath)}:`, e);
                 return { success: false, error: `Failed to parse ${path.basename(filePath)}.` };
             }
         }
-        context.tagConfig = newConfig;
-        await fs.writeFile(context.SESSION_FILE_PATH, JSON.stringify(context.tagConfig, null, 2));
-        return { success: true, config: context.tagConfig, warnings: allWarnings };
+        const { SESSION_FILE_PATH } = store.getState();
+        store.setState({ tagConfig: newConfig });
+        await fs.writeFile(SESSION_FILE_PATH, JSON.stringify(newConfig, null, 2));
+        return { success: true, config: newConfig, warnings: allWarnings };
     });
 
     ipcMain.handle('clear-session', async () => {
         try {
-            await fs.unlink(context.SESSION_FILE_PATH);
-            console.log('[Main] Session file deleted.');
-            context.tagConfig = {};
-            context.liveValues = {};
-            if (context.plcApiInstance && context.plcApiInstance.sessionId) {
-                await context.plcApiInstance.logout();
+            const { SESSION_FILE_PATH, plcApiInstance } = store.getState();
+            await fs.unlink(SESSION_FILE_PATH);
+            if (plcApiInstance?.sessionId) {
+                await plcApiInstance.logout();
             }
-            context.stopPolling();
-            context.plcApiInstance = null;
-            context.activePollingTags = [];
+            stopPolling();
+            store.setState({
+                tagConfig: {},
+                liveValues: {},
+                plcApiInstance: null,
+                activePollingTags: []
+            });
             return { success: true };
         } catch (error) {
-            if (error.code === 'ENOENT') {
-                return { success: true };
-            }
-            console.error('[Main] Error clearing session:', error);
+            if (error.code === 'ENOENT') return { success: true }; // File didn't exist, which is fine
             return { success: false, error: error.message };
         }
     });
 
     // --- PLC Communication Handlers ---
     ipcMain.handle('plc:connect', async (event, ip) => {
+        const { plcConfig } = store.getState();
         try {
-            context.plcApiInstance = await SiemensPLC_API.create(ip, context.plcConfig.username, context.plcConfig.password);
-            const result = await context.plcApiInstance.login();
+            const newPlcApiInstance = await SiemensPLC_API.create(ip, plcConfig.username, plcConfig.password);
+            const result = await newPlcApiInstance.login();
             if (result.success) {
-                const pollRate = 1000;
-                context.startPolling(pollRate);
-                return { success: true, ip: context.plcApiInstance.config.plcIp, sessionId: context.plcApiInstance.sessionId };
+                store.setState({ plcApiInstance: newPlcApiInstance });
+                startPolling(1000); // Start polling at 1s rate
+                return { success: true, ip: newPlcApiInstance.config.plcIp, sessionId: newPlcApiInstance.sessionId };
             } else {
                 return { success: false, ip, error: result.error };
             }
         } catch (error) {
-            console.error(`[Main] Failed to initialize PLC connection: ${error.message}`);
             return { success: false, ip, error: error.message };
         }
     });
 
     ipcMain.handle('plc:disconnect', async () => {
-        context.stopPolling();
-        if (context.plcApiInstance) await context.plcApiInstance.logout();
-        context.plcApiInstance = null;
+        const { plcApiInstance } = store.getState();
+        stopPolling();
+        if (plcApiInstance) await plcApiInstance.logout();
+        store.setState({ plcApiInstance: null, plcState: { connected: false } });
         return { success: true };
     });
 
     ipcMain.handle('plc:write', async (event, { tagName, value, type }) => {
-        console.log(`[IPC] Received 'plc:write' for tag: ${tagName} with value: ${value} of type: ${type}`);
-        if (!context.plcApiInstance) {
-            return { success: false, error: 'PLC not connected.' };
-        }
+        const { plcApiInstance, tagConfig } = store.getState();
+        if (!plcApiInstance) return { success: false, error: 'PLC not connected.' };
 
         let typedValue;
         try {
-            // Find the authoritative type from the loaded config
-            const allTags = Object.values(context.tagConfig).flatMap(source => source.tags || []);
+            const allTags = Object.values(tagConfig).flatMap(source => source.tags || []);
             const tagObject = allTags.find(t => t.fullTagName === tagName);
             const authoritativeType = (tagObject?.type || type || '').toLowerCase();
 
             if (authoritativeType.includes('bool')) {
                 const lowerVal = String(value).toLowerCase();
-                if (!['true', 'false', '1', '0'].includes(lowerVal)) {
-                    throw new Error('Invalid value for Bool. Use true, false, 1, or 0.');
-                }
+                if (!['true', 'false', '1', '0'].includes(lowerVal)) throw new Error('Invalid value for Bool.');
                 typedValue = (lowerVal === 'true' || lowerVal === '1');
-            } else if (authoritativeType.includes('int')) { // Covers int, sint, dint, etc.
+            } else if (authoritativeType.includes('int')) {
                 typedValue = parseInt(value, 10);
-                if (isNaN(typedValue) || String(typedValue) !== String(value).trim()) {
-                    throw new Error('Invalid value for an Integer type.');
-                }
-            } else if (authoritativeType.includes('real')) { // Covers real/float
+                if (isNaN(typedValue) || String(typedValue) !== String(value).trim()) throw new Error('Invalid value for Integer.');
+                typedValue = Number(typedValue);
+            } else if (authoritativeType.includes('real')) {
                 typedValue = parseFloat(value);
-                if (isNaN(typedValue)) {
-                    throw new Error('Invalid value for a Real/float type.');
-                }
+                if (isNaN(typedValue)) throw new Error('Invalid value for Real/float.');
             } else {
-                // For string types or others we don't explicitly handle, pass the raw string.
                 typedValue = value;
             }
         } catch (e) {
-            console.error(`[IPC VALIDATION] Write failed for tag ${tagName}:`, e.message);
             return { success: false, error: e.message };
         }
 
-        const result = await context.plcApiInstance.writeVariable(tagName, typedValue);
-        if (result.success) {
-            console.log(`[IPC] Write successful for tag: ${tagName}`);
-            context.pollMainData(); // Immediately poll for the new value
-        } else {
-            console.error(`[IPC ERROR] Write failed for tag ${tagName}:`, result.error);
-        }
+        const result = await plcApiInstance.writeVariable(tagName, typedValue);
+        if (result.success) pollMainData(); // Immediately poll for the new value
         return result;
     });
 
     ipcMain.on('plc:set-poll-rate', (event, rate) => {
-        if (context.plcApiInstance?.sessionId) {
-            context.startPolling(rate);
+        const { plcApiInstance } = store.getState();
+        if (plcApiInstance?.sessionId) {
+            startPolling(rate);
         }
     });
 
     // --- Database and Logging Handlers ---
     ipcMain.handle('db:log-tag', (event, { tagName, value, dataType }) => {
-        console.log(`[IPC] Received 'db:log-tag' for tag: ${tagName}`);
+        const { db } = store.getState();
         try {
-            const stmt = context.db.prepare('INSERT INTO history (tagName, value, timestamp, dataType, quality) VALUES (?, ?, ?, ?, ?)');
+            const stmt = db.prepare('INSERT INTO history (tagName, value, timestamp, dataType, quality) VALUES (?, ?, ?, ?, ?)');
             stmt.run(tagName, String(value), new Date().toISOString(), dataType, 'GOOD');
-            console.log(`[DB] Successfully logged tag: ${tagName}`);
             return { success: true };
         } catch (error) {
-            console.error("[DB ERROR] Database log error:", error);
             return { success: false, error: error.message };
         }
     });
 
     ipcMain.handle('db:clear-history', () => {
+        const { db } = store.getState();
         try {
-            context.db.prepare('DELETE FROM history').run();
+            db.prepare('DELETE FROM history').run();
             return { success: true };
         } catch (error) {
-            console.error("Database clear error:", error);
             return { success: false, error: error.message };
         }
     });
 
     // --- UI State and Viewer Handlers ---
     ipcMain.handle('trending:set-state', (event, { tagName, isTrending }) => {
-        console.log(`[IPC] Received 'trending:set-state' for tag: ${tagName}, trending: ${isTrending}`);
+        let { plottedTags, viewerWindows } = store.getState();
         if (isTrending) {
-            if (!context.plottedTags.includes(tagName)) context.plottedTags.push(tagName);
+            if (!plottedTags.includes(tagName)) plottedTags.push(tagName);
         } else {
-            context.plottedTags = context.plottedTags.filter(t => t !== tagName);
+            plottedTags = plottedTags.filter(t => t !== tagName);
         }
-        const graphWin = context.viewerWindows.graph;
+        store.setState({ plottedTags });
+        const graphWin = viewerWindows.graph;
         if (graphWin && !graphWin.isDestroyed()) {
             graphWin.webContents.send('graph:update-plotted-tags', { tagName });
         }
-        return { success: true, plottedTags: context.plottedTags };
+        return { success: true, plottedTags };
     });
 
     ipcMain.handle('trending:clear-all', () => {
-        context.plottedTags = [];
-        const graphWin = context.viewerWindows.graph;
+        let { viewerWindows } = store.getState();
+        store.setState({ plottedTags: [] });
+        const graphWin = viewerWindows.graph;
         if (graphWin && !graphWin.isDestroyed()) {
             graphWin.webContents.send('graph:clear-all-tags');
         }
@@ -201,42 +188,45 @@ function registerIpcHandlers(context) {
     });
 
     ipcMain.handle('alarms:ack-all', () => {
-        context.mockAlarms.forEach(alarm => alarm.acknowledgement = { state: 'acknowledged' });
-        const alarmWin = context.viewerWindows.alarms;
+        let { mockAlarms, viewerWindows } = store.getState();
+        mockAlarms.forEach(alarm => alarm.acknowledgement = { state: 'acknowledged' });
+        store.setState({ mockAlarms });
+        const alarmWin = viewerWindows.alarms;
         if (alarmWin && !alarmWin.isDestroyed()) {
-            alarmWin.webContents.send('alarms-update', { entries: context.mockAlarms });
+            alarmWin.webContents.send('alarms-update', { entries: mockAlarms });
         }
         return { success: true };
     });
 
     ipcMain.on('open-viewer', (event, viewerName) => {
-        if (context.viewerWindows[viewerName] && !context.viewerWindows[viewerName].isDestroyed()) {
-            context.viewerWindows[viewerName].focus();
+        let { viewerWindows, mainWindow } = store.getState();
+        if (viewerWindows[viewerName] && !viewerWindows[viewerName].isDestroyed()) {
+            viewerWindows[viewerName].focus();
             return;
         }
         const win = new BrowserWindow({
-            width: 800,
-            height: 600,
-            parent: context.mainWindow,
+            width: 800, height: 600, parent: mainWindow,
             webPreferences: {
                 preload: path.join(__dirname, `../views/${viewerName}/preload.js`),
-                contextIsolation: true,
-                nodeIntegration: false
+                contextIsolation: true, nodeIntegration: false
             }
         });
         win.loadFile(path.join(__dirname, `../views/${viewerName}/index.html`));
-        win.on('closed', () => { delete context.viewerWindows[viewerName]; });
-        context.viewerWindows[viewerName] = win;
+        win.on('closed', () => {
+            delete viewerWindows[viewerName];
+            store.setState({ viewerWindows });
+        });
+        viewerWindows[viewerName] = win;
+        store.setState({ viewerWindows });
     });
 
     // --- Debugging and State Getters ---
-    ipcMain.handle('debug:get-last-api-call', () => {
-        return getLastApiCall();
-    });
+    ipcMain.handle('debug:get-last-api-call', () => getLastApiCall());
 
     ipcMain.handle('debug:export-api-call', async (event, data) => {
+        const { mainWindow } = store.getState();
         try {
-            const { canceled, filePath } = await dialog.showSaveDialog(context.mainWindow, {
+            const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
                 title: 'Export API Call',
                 defaultPath: `api-debug-${new Date().toISOString().replace(/[:.]/g, '-')}.json`,
                 filters: [{ name: 'JSON Files', extensions: ['json'] }]
@@ -248,19 +238,21 @@ function registerIpcHandlers(context) {
             }
             return { success: false, reason: 'Dialog canceled' };
         } catch (error) {
-            console.error('Failed to export API debug data:', error);
             return { success: false, error: error.message };
         }
     });
 
-    ipcMain.handle('get-app-config', () => context.tagConfig);
-    ipcMain.handle('get-live-values', () => context.liveValues);
-    ipcMain.handle('get-plc-state', () => ({
-        connected: !!context.plcApiInstance?.sessionId,
-        ip: context.plcApiInstance?.config.plcIp || '',
-        sessionId: context.plcApiInstance?.sessionId || '',
-        lastUsedIp: context.plcApiInstance?.config.plcIp || context.DEFAULT_PLC_IP
-    }));
+    ipcMain.handle('get-app-config', () => store.getState().tagConfig);
+    ipcMain.handle('get-live-values', () => store.getState().liveValues);
+    ipcMain.handle('get-plc-state', () => {
+        const { plcApiInstance, DEFAULT_PLC_IP } = store.getState();
+        return {
+            connected: !!plcApiInstance?.sessionId,
+            ip: plcApiInstance?.config.plcIp || '',
+            sessionId: plcApiInstance?.sessionId || '',
+            lastUsedIp: plcApiInstance?.config.plcIp || DEFAULT_PLC_IP
+        };
+    });
 }
 
 module.exports = { registerIpcHandlers };
