@@ -7,14 +7,14 @@ const Database = require('better-sqlite3');
 let fetch;
 
 // --- User Configuration Constants ---
+const PLC_USERNAME = "Siemens";
+const PLC_PASSWORD = "Siemens123!";
 const DEFAULT_PLC_IP = '192.168.0.1';
-const PLC_CONFIG_PATH = path.join(app.getPath('userData'), 'plc-config.json');
 const SESSION_FILE_PATH = path.join(app.getPath('userData'), 'session.json');
 
 // --- Centralized State Management ---
 let mainWindow;
 let plcApiInstance = null;
-let plcConfig = {};
 let tagConfig = {};
 let liveValues = {};
 let pollTimer = null;
@@ -226,25 +226,6 @@ function parseS7dcl(content) {
 }
 
 
-async function loadOrCreatePlcConfig() {
-    try {
-        await fs.access(PLC_CONFIG_PATH);
-        const configData = await fs.readFile(PLC_CONFIG_PATH, 'utf8');
-        console.log('[Main] Loaded PLC config from file.');
-        return JSON.parse(configData);
-    } catch (error) {
-        if (error.code === 'ENOENT') {
-            console.log('[Main] plc-config.json not found. Creating with default credentials.');
-            const defaultConfig = { username: "Siemens", password: "Siemens123!" };
-            await fs.writeFile(PLC_CONFIG_PATH, JSON.stringify(defaultConfig, null, 2));
-            return defaultConfig;
-        } else {
-            console.error('[Main] Error loading PLC config:', error);
-            return { username: "Siemens", password: "Siemens123!" }; // Fallback
-        }
-    }
-}
-
 // --- Main Application Lifecycle & Window Management ---
 function createMainWindow() {
     mainWindow = new BrowserWindow({
@@ -278,7 +259,6 @@ async function loadSavedSession() {
 
 app.whenReady().then(async () => {
     fetch = (await import('node-fetch')).default;
-    plcConfig = await loadOrCreatePlcConfig();
     createMainWindow();
     const menu = Menu.buildFromTemplate([ { label: 'File', submenu: [ { role: 'quit' } ] }, { label: 'View', submenu: [ { role: 'reload' }, { role: 'forceReload' }, { role: 'toggleDevTools' } ] } ]);
     Menu.setApplicationMenu(menu);
@@ -479,7 +459,7 @@ ipcMain.handle('db:get-history', (event, { tagNames, limit }) => {
 });
 
 ipcMain.handle('plc:connect', async (event, ip) => {
-    plcApiInstance = new SiemensPLC_API(ip, plcConfig.username, plcConfig.password);
+    plcApiInstance = new SiemensPLC_API(ip, PLC_USERNAME, PLC_PASSWORD);
     const success = await plcApiInstance.login();
     if (success) {
         const pollRate = 1000;
