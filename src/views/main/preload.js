@@ -12,15 +12,9 @@ contextBridge.exposeInMainWorld('api', {
     writePlc: (tagName, value) => ipcRenderer.invoke('plc:write', { tagName, value }),
     setPollRate: (rate) => ipcRenderer.send('plc:set-poll-rate', rate),
 
-    // State & Data Getters
-    getAppConfig: () => ipcRenderer.invoke('get-app-config'),
-    getLiveValues: () => ipcRenderer.invoke('get-live-values'),
-    getPlcState: () => ipcRenderer.invoke('get-plc-state'),
-
     // Window Management & Events
     openViewer: (viewerName) => ipcRenderer.send('open-viewer', viewerName),
-    onDataUpdate: (callback) => ipcRenderer.on('data-update', (event, data) => callback(data)),
-    onSessionLoaded: (callback) => ipcRenderer.on('session-loaded', (event, data) => callback(data)),
+    onStateUpdate: (callback) => ipcRenderer.on('state-update', (event, state) => callback(state)),
 
     // Tag and Quick Actions
     logTagToDb: (data) => ipcRenderer.invoke('db:log-tag', data),
