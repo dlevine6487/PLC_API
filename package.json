@@ -5,6 +5,7 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
+    "test": "./node_modules/.bin/playwright test",
     "postinstall": "electron-rebuild"
   },
   "author": "Your Name",
@@ -16,6 +17,8 @@
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
-    "electron-rebuild": "^3.2.9"
+    "@playwright/test": "^1.55.0",
+    "electron-rebuild": "^3.2.9",
+    "js-yaml": "^4.1.0"
   }
 }
