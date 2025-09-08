@@ -1,0 +1,62 @@
+test_cases:
+  - id: TC_LOGIN_001
+    description: "Verify that entering valid credentials logs the user in successfully."
+    # This test case simulates filling out a login form and clicking the login button.
+    actions:
+      - type: fill
+        selector: "#username"
+        value: "admin"
+      - type: fill
+        selector: "#password"
+        value: "password123"
+      - type: click
+        selector: "button#login-button"
+    # The backend check verifies that the correct API call was made.
+    backend_check:
+      endpoint: "/api/v1/login"
+      method: "POST"
+      expected_status: 200
+    resolutions:
+      - [1024, 768]
+      - [1920, 1080]
+
+  - id: TC_MAIN_START_PROCESS_001
+    description: "Verify that clicking the 'Start Process' button initiates the process."
+    # This simulates a user clicking a primary action button on the main dashboard.
+    actions:
+      - type: click
+        selector: "button#start-process-button"
+    backend_check:
+      endpoint: "/api/v1/process/start"
+      method: "POST"
+      expected_status: 202 # 202 Accepted is a good code for starting a long-running process.
+    resolutions:
+      - [1280, 720]
+      - [1920, 1080]
+
+  - id: TC_SETTINGS_DIALOG_001
+    description: "Verify the settings dialog opens and closes correctly."
+    # This tests UI-only functionality: opening and closing a modal dialog.
+    actions:
+      - type: click
+        selector: "button#settings-button" # Action to open the dialog
+      - type: click
+        selector: "button#close-settings-dialog-button" # Action to close it
+    # No backend check is needed as this is a pure UI interaction.
+    backend_check: null
+    resolutions:
+      - [800, 600]
+      - [1920, 1080]
+
+  - id: TC_LOGOUT_001
+    description: "Verify that clicking the 'Logout' button returns the user to the login screen."
+    # This tests the logout functionality.
+    actions:
+      - type: click
+        selector: "button#logout-button"
+    backend_check:
+      endpoint: "/api/v1/logout"
+      method: "POST"
+      expected_status: 200
+    resolutions:
+      - [1280, 720]
