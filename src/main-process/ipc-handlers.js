@@ -77,12 +77,14 @@ function registerIpcHandlers(context) {
     ipcMain.handle('plc:connect', async (event, ip) => {
         try {
             context.plcApiInstance = await SiemensPLC_API.create(ip, context.plcConfig.username, context.plcConfig.password);
-            const success = await context.plcApiInstance.login();
-            if (success) {
+            const result = await context.plcApiInstance.login();
+            if (result.success) {
                 const pollRate = 1000;
                 context.startPolling(pollRate);
+                return { success: true, ip: context.plcApiInstance.config.plcIp, sessionId: context.plcApiInstance.sessionId };
+            } else {
+                return { success: false, ip, error: result.error };
             }
-            return { success, ip: context.plcApiInstance?.config.plcIp, sessionId: context.plcApiInstance?.sessionId, error: success ? null : 'Login Failed' };
         } catch (error) {
             console.error(`[Main] Failed to initialize PLC connection: ${error.message}`);
             return { success: false, ip, error: error.message };
