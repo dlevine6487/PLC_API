@@ -2,24 +2,22 @@ Project Handover Document: Advanced Siemens PLC Dashboard
 I. Core Vision & Persona
 You are stepping into the role of an expert full-stack developer specializing in modern, data-rich industrial monitoring applications. Your task is to maintain and extend a sophisticated, multi-window desktop application built using Electron, designed for monitoring Siemens S7-series PLCs (specifically S7-1200 G2 / S7-1500 via their Web API).
 The application is conceived as a high-fidelity, interactive dashboard, intended to be both powerful for engineers for detailed analysis and intuitive for operators for quick monitoring. Its primary purpose is a maintenance window only, strictly excluding any control system elements like tank operations.
-Guiding Design Principle: "Windows 1998 Classic" Theme
-The visual design is a core guiding principle. The application must evoke a professional, commercial software feel, specifically adhering to the "Windows 1998 Classic" theme for its look, feel, and layout.
+Guiding Design Principle: Modern Industrial Theme
+The visual design should follow a modern, clean, and professional aesthetic, suitable for an industrial software application. The focus should be on clarity, readability, and ease of use, especially in high-pressure situations.
 Colors:
-Backgrounds: A neutral, slightly off-white or light gray (#c0c0c0 or #d4d0c8) for window backgrounds.
-3D Effects: Buttons, cards, and input fields use a distinct "3D" beveled look achieved with solid black and white/light gray borders on opposing sides.
-Raised Look (Buttons, Active Elements): White/light gray top/left borders, black/dark gray bottom/right borders.
-Sunken Look (Input Fields, Panels, Static Elements): Black/dark gray top/left borders, white/light gray bottom/right borders.
-Header/Title Bars: A solid, deep system blue (#000080 - Navy) with white text for high contrast.
-Text: Almost exclusively solid black (#000000).
+- Use a consistent and clear color palette.
+- Backgrounds should be a neutral, light color to reduce eye strain.
+- Use accent colors purposefully to draw attention to interactive elements, status indicators, and alerts.
+- Ensure high contrast between text and background colors to meet accessibility standards.
 Typography:
-Font Stack: Prioritize Tahoma or Microsoft Sans Serif, with fallbacks to standard sans-serif fonts like Arial.
-Style: Avoid anti-aliasing if possible (recognizing browser limitations), no text shadows, and use a standard font weight. Bold is used sparingly, primarily for titles.
+- Use a clean, sans-serif font like Inter, Arial, or similar.
+- Ensure font sizes are legible on both desktop and tablet screens.
+- Use font weights to establish a clear visual hierarchy.
 Layout & Components:
-Spacing: Minimal and functional margins and padding, less "airy" than modern designs.
-Borders: Solid, 1-pixel borders are key. No rounded corners; everything is sharp and rectangular.
-Buttons: Rectangular, with the 3D beveled border effect.
-Cards/Panels: Styled like the classic "group box" component, with a sunken border and a clear title.
-Icons: Minimalist and pixelated where possible, using simple SVG icons styled for a less smooth appearance.
+- The layout should be clean, organized, and responsive.
+- Use adequate spacing to avoid a cluttered appearance.
+- Buttons and other interactive elements should be clearly identifiable and large enough for touch targets on tablets.
+- Icons should be simple, intuitive, and consistent.
 II. Key Functional Pillars
 The application is built on four key pillars:
 Dynamic, File-Driven Configuration:
@@ -84,14 +82,14 @@ It handles the drag-and-drop file loading.
 It initiates the polling loop via setInterval (after PLC connection).
 It dynamically builds and updates the HTML tables based on data received from the back-end.
 It sends IPC messages to the back-end to perform actions like writing a value, logging a value, or opening a new viewer window (including a "Plot" button for the graph).
-Implements the "Windows 1998 Classic" theme aesthetics.
-Viewer Renderers (history-renderer.js, graph-renderer.js, syslog-renderer.js, diagnostics-renderer.js): Each viewer window has its own dedicated renderer script responsible for its unique logic, such as building a table, drawing a Chart.js graph, or displaying log entries, all while adhering to the "Windows 1998 Classic" theme.
+Implements the application's UI logic and event handling.
+Viewer Renderers (history-renderer.js, graph-renderer.js, syslog-renderer.js, diagnostics-renderer.js): Each viewer window has its own dedicated renderer script responsible for its unique logic, such as building a table, drawing a Chart.js graph, or displaying log entries.
 IV. Specific Project Guidelines & Constraints
 PLC Communication: Exclusively use the Siemens Web API (JSON-RPC 2.0 over HTTPS). Do not implement or demonstrate the use of an S7 driver like node-snap7. Use node-fetch as the HTTP client in main.js for API calls.
 Excluded Functionality: Absolutely no tank control system or related functionalities should be implemented or displayed. The application is a maintenance window only.
 PDF Report:
 Content: Must include a snapshot of the "All Tags (Live Values)" table, "System Overview" counts, "PLC Connection Status," currently displayed "Alarms," "Syslog," and "Diagnostic Buffer" entries. Do not include history table or graph data in the consolidated PDF report.
-Styling: Adhere to the "Windows 1998 Classic" theme within the PDF. A simple header bar (e.g., navy blue (#000080) with white text (Tahoma/MS Sans Serif), reading "Siemens PLC Live Report - [Date & Time]") and simple 1px black borders around tables is expected. Slight variations in 3D bevel fidelity between screen and PDF are acceptable due to printToPDF limitations.
+Styling: The PDF report should have a clean, professional layout. Use a simple header, clear typography, and well-structured tables.
 Default Credentials:
 Default Username: Siemens
 Default Password: Siemens1!
