@@ -61,20 +61,26 @@ class SiemensPLC_API {
     }
 
     async login() {
-        const request = {
-            jsonrpc: "2.0",
-            method: "Api.Login",
-            params: { user: this.config.username, password: this.config.password, "include_web_application_cookie": true },
-            id: String(this.requestId++)
-        };
-        const response = await this._sendRequest(request);
-        if (response?.result?.token) {
-            this.sessionId = response.result.token;
-            console.log("[PLC API] SUCCESS: Login successful.");
-            return true;
+        try {
+            const request = {
+                jsonrpc: "2.0",
+                method: "Api.Login",
+                params: { user: this.config.username, password: this.config.password, "include_web_application_cookie": true },
+                id: String(this.requestId++)
+            };
+            const response = await this._sendRequest(request);
+            if (response?.result?.token) {
+                this.sessionId = response.result.token;
+                console.log("[PLC API] SUCCESS: Login successful.");
+                return { success: true };
+            }
+            const errorMessage = response?.error?.message || "Unknown login error";
+            console.error("[PLC API] ERROR: Login failed.", errorMessage);
+            return { success: false, error: errorMessage };
+        } catch (error) {
+            console.error("[PLC API] CRITICAL ERROR: Login request failed.", error.message);
+            return { success: false, error: error.message };
         }
-        console.error("[PLC API] ERROR: Login failed.", response?.error || 'No response');
-        return false;
     }
 
     async readMultipleVariables(tagArray) {
@@ -85,12 +91,9 @@ class SiemensPLC_API {
             params: { "var": tag.fullTagName },
             id: tag.fullTagName
         }));
-        try {
-            return await this._sendRequest(requests);
-        } catch (error) {
-            console.error("[PLC API] Bulk read failed.", error.message);
-            return null;
-        }
+        // Let the caller handle the exception directly.
+        // The polling loop in main.js has a try/catch for this.
+        return await this._sendRequest(requests);
     }
 
     async writeVariable(variableName, value) {
