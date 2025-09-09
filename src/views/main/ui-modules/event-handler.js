@@ -139,25 +139,7 @@ async function confirmWrite() {
     } else {
         showToast(`Write failed: ${result.error}`, 'error');
     }
-
-    // Close both modals upon completion
-    D.writeConfirmModal.classList.remove('active');
     D.tagActionsModal.classList.remove('active');
-}
-
-function initiateConfirmWrite() {
-    const { fullTagName } = appState.currentActionTag;
-    const rawValue = document.getElementById('actions-modal-input').value;
-
-    if (rawValue.trim() === '') {
-        showToast('Cannot write an empty value.', 'error');
-        return;
-    }
-
-    // Populate and show the confirmation modal
-    D.writeConfirmTagName.textContent = fullTagName;
-    D.writeConfirmTagValue.textContent = rawValue;
-    D.writeConfirmModal.classList.add('active');
 }
 
 async function toggleLogging() {
@@ -221,7 +203,7 @@ function handleTagActionsModalClick(event) {
     } else if (target.matches('#actions-modal-trend-btn')) {
         toggleTrending();
     } else if (target.matches('#actions-modal-confirm-write-btn')) {
-        initiateConfirmWrite();
+        confirmWrite();
     }
 }
 
@@ -247,12 +229,4 @@ function setupEventListeners() {
     D.clearTrendsBtn.addEventListener('click', handleClearTrends);
     D.ackAllAlarmsBtn.addEventListener('click', handleAckAllAlarms);
     D.tagActionsModal.addEventListener('click', handleTagActionsModalClick);
-
-    // New listeners for the write confirmation modal
-    D.writeConfirmConfirmBtn.addEventListener('click', () => {
-        confirmWrite();
-    });
-    D.writeConfirmCancelBtn.addEventListener('click', () => {
-        D.writeConfirmModal.classList.remove('active');
-    });
 }

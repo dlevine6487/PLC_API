@@ -1,6 +1,7 @@
 import * as D from './ui-modules/dom-elements.js';
 import * as U from './ui-modules/ui-updater.js';
 import { initializeEventHandlers } from './ui-modules/event-handler.js';
+import { initializeDomElements } from './ui-modules/dom-elements.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // This object holds the most recent state received from the main process.
@@ -10,7 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // A variable to track if the dashboard has been shown.
     let isDashboardVisible = false;
 
-    // Initialize event handlers, giving them access to our state cache.
+    // Initialize DOM elements and event handlers now that the DOM is ready.
+    initializeDomElements();
     initializeEventHandlers(currentState);
 
     // Setup a single listener for all state updates from the main process.
