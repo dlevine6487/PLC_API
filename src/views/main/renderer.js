@@ -15,8 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Setup a single listener for all state updates from the main process.
     window.api.onStateUpdate(newState => {
-        // Update the local state cache.
-        currentState = newState;
+        // Update the local state cache by merging the new state. This is critical
+        // to ensure that other modules holding a reference to `currentState` see
+        // the updates.
+        Object.assign(currentState, newState);
 
         // When new state arrives, re-render everything.
         const { tagConfig, liveValues, plcState } = currentState;
