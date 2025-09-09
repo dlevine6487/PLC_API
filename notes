@@ -50,30 +50,3 @@ Viewer windows don't open:
 Check the main process terminal for console.error messages when attempting to open a viewer.
 Ensure the HTML and preload .js files for the viewers are present in the correct directory.
 Check the developer tools (Ctrl+Shift+I or F12) of the main window for any ipcRenderer related errors.
-
----
-## Advanced Configuration
-
-### Secure Connection to PLC (HTTPS)
-
-For a secure connection to your PLC, you must provide the PLC's TLS certificate to the application.
-
-1.  **Export the Certificate from your PLC:**
-    -   Using your web browser, navigate to the web interface of your PLC (e.g., `https://192.168.0.1`).
-    -   Your browser will likely show a security warning. Proceed to the site.
-    -   Click on the padlock icon in the address bar and view the certificate details.
-    -   Export the certificate as a Base64-encoded ASCII file. The format should be `.pem` or `.cer`.
-
-2.  **Install the Certificate for the Application:**
-    -   Rename the exported certificate file to `plc-cert.pem`.
-    -   Find the application's user data directory. You can find this path in the `session.json` file in the application's root directory.
-        -   Windows: `C:\\Users\\<YourUser>\\AppData\\Roaming\\plc-web-api-dashboard`
-        -   macOS: `~/Library/Application Support/plc-web-api-dashboard`
-        -   Linux: `~/.config/plc-web-api-dashboard`
-    -   Place the `plc-cert.pem` file inside this directory.
-
-3.  **Restart and Verify:**
-    -   Restart the application.
-    -   When you connect, the application will load the certificate and establish a secure, encrypted connection. Check the application logs for a confirmation message.
-
-If the `plc-cert.pem` file is not found, the application will log a security warning and fall back to an **insecure** connection mode where certificate validation is disabled. This is not recommended for production environments.

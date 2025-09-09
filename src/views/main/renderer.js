@@ -1,4 +1,4 @@
-import * as D from './ui-modules/dom-elements.js';
+import D from './ui-modules/dom-elements.js';
 import * as U from './ui-modules/ui-updater.js';
 import { initializeEventHandlers } from './ui-modules/event-handler.js';
 

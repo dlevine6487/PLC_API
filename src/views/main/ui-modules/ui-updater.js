@@ -1,4 +1,4 @@
-import * as D from './dom-elements.js';
+import D from './dom-elements.js';
 
 // --- UI Feedback Helpers ---
 export function showLoading() { D.loadingOverlay.classList.add('active'); }
