@@ -14,15 +14,25 @@ To provide a real-time maintenance and monitoring window into PLC operations.
 ### 1.2. Out of Scope
 The application will **strictly exclude any direct process control logic** (e.g., tank filling controls) to ensure operational safety and maintain its intended scope.
 
-## 2. User Interface (Locked In)
+## 2. User Interface
 
-The current graphical user interface (GUI) is **locked in and requires no modification**.
+### 2.1. Core Layout (Locked In)
+
+The core graphical user interface (GUI) layout is **locked in and requires no modification**. This refers specifically to the main three-panel design and overall theme.
 
 *   **Theme:** Modern, clean, and professional light theme.
 *   **Layout:** A three-panel design composed of:
     *   **Left Panel (280px):** Navigation and System Status.
     *   **Center Panel (Flexible):** Main content, such as the live tag table.
     *   **Right Panel (350px):** Tag lookup and quick actions.
+
+### 2.2. Flexibility for Enhancements
+
+While the core layout is fixed, there is flexibility to enhance and refine the user experience. The "locked in" status does **not** apply to:
+
+*   **Modal Windows and Dialogs:** New and existing pop-up windows (e.g., connection modals, confirmation dialogs) can be created or modified to improve workflow.
+*   **User Feedback Mechanisms:** Enhancements such as toast notifications, visual cues (e.g., color flashes), and other feedback elements are encouraged.
+*   **Workflow Improvements:** Changes that improve user efficiency and safety, such as those recommended in the **[Expert UI/UX Review](./EXPERT_UI_UX_REVIEW.md)**, are in scope, provided they do not alter the core three-panel layout.
 
 ## 3. Prioritized v1.1 Feature Implementation
 
