@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Document>
+  <SW.Blocks.GlobalDB ID="0">
+    <AttributeList>
+      <Interface>
+        <Sections>
+          <Section Name="Static">
+            <Member Name="TestBool" Datatype="Bool" />
+            <Member Name="TestInt" Datatype="Int" />
+            <Member Name="TestReal" Datatype="Real" />
+          </Section>
+        </Sections>
+      </Interface>
+      <Name>TestDB</Name>
+    </AttributeList>
+  </SW.Blocks.GlobalDB>
+</Document>

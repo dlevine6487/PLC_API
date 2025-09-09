@@ -9,17 +9,19 @@ test_cases:
         selector: "dropZone" # Using POM logical name
         description: "Wait for the initial file drop zone to be visible."
 
-      # Step 2: Mock the file load by directly manipulating the DOM
+      # Step 2: Load a test file using the application's API
       - type: "evaluate"
-        script: |
-          document.getElementById('drop-zone').style.display = 'none';
-          document.getElementById('app-container').style.display = 'grid';
-          document.getElementById('app-container').style.opacity = '1';
-        description: "Mock file load by forcing the dashboard to be visible."
+        script: "window.api.parseFiles(['/app/tests/fixtures/test_db.xml'])"
+        description: "Load test file using the application's file parsing API."
 
-      # Step 3: Verify the main dashboard appears and the splash screen is gone
+      # Step 3: Wait for UI transition to complete
+      - type: "wait"
+        duration: 500 # Wait for the 300ms fade-in animation
+        description: "Wait for UI transition animation."
+
+      # Step 4: Verify the main dashboard appears and the splash screen is gone
       - type: "wait_for_selector"
-        selector: "appContainer" # Using POM logical name
+        selector: "appContainer"
         description: "Wait for the main application container to be visible."
       - type: "wait_for_hidden"
         selector: "dropZone" # Using POM logical name

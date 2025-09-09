@@ -43,13 +43,13 @@ async function loadOrCreatePlcConfig() {
         return JSON.parse(configData);
     } catch (error) {
         if (error.code === 'ENOENT') {
-            console.log('[Main] plc-config.json not found. Creating with default credentials.');
-            const defaultConfig = { username: "Siemens", password: "Siemens123!" };
+            console.log('[Main] plc-config.json not found. Creating with blank credentials.');
+            const defaultConfig = { username: "", password: "" };
             await fs.writeFile(PLC_CONFIG_PATH, JSON.stringify(defaultConfig, null, 2));
             return defaultConfig;
         } else {
             console.error('[Main] Error loading PLC config:', error);
-            return { username: "Siemens", password: "Siemens123!" }; // Fallback
+            return { username: "", password: "" }; // Fallback
         }
     }
 }
@@ -187,7 +187,8 @@ app.whenReady().then(async () => {
         db: db,
         SESSION_FILE_PATH: SESSION_FILE_PATH,
         DEFAULT_PLC_IP: DEFAULT_PLC_IP,
-        mainWindow: null // will be set in createMainWindow
+        mainWindow: null, // will be set in createMainWindow
+        plcState: { connected: false, ip: null, sessionId: null, error: null }
     });
 
     // Register IPC handlers, passing them the store and necessary functions

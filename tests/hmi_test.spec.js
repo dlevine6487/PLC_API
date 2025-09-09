@@ -58,6 +58,9 @@ for (const testCase of testCases.test_cases) {
             case 'evaluate':
               await page.evaluate(action.script);
               break;
+            case 'wait':
+              await page.waitForTimeout(action.duration);
+              break;
             default:
               throw new Error(`Unknown action type: ${action.type}`);
           }
