@@ -1,4 +1,4 @@
-import * as D from './dom-elements.js';
+import D from './dom-elements.js';
 import * as U from './ui-updater.js';
 import { showToast } from './toast-notification.js';
 
