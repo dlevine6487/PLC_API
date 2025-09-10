@@ -1,0 +1,240 @@
+{
+  "request": [
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"MyDataBlock\".\"MyBoolean1\""
+      },
+      "id": "\"MyDataBlock\".\"MyBoolean1\""
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"MyDataBlock\".\"MyBoolean2\""
+      },
+      "id": "\"MyDataBlock\".\"MyBoolean2\""
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"MyDataBlock\".\"MyInteger\""
+      },
+      "id": "\"MyDataBlock\".\"MyInteger\""
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"MyDataBlock\".\"MyInteger1\""
+      },
+      "id": "\"MyDataBlock\".\"MyInteger1\""
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"AlwaysFALSE\""
+      },
+      "id": "\"AlwaysFALSE\""
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"AlwaysTRUE\""
+      },
+      "id": "\"AlwaysTRUE\""
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"Clock_0.5Hz\""
+      },
+      "id": "\"Clock_0.5Hz\""
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"Clock_0.625Hz\""
+      },
+      "id": "\"Clock_0.625Hz\""
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"Clock_1.25Hz\""
+      },
+      "id": "\"Clock_1.25Hz\""
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"Clock_10Hz\""
+      },
+      "id": "\"Clock_10Hz\""
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"Clock_1Hz\""
+      },
+      "id": "\"Clock_1Hz\""
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"Clock_2.5Hz\""
+      },
+      "id": "\"Clock_2.5Hz\""
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"Clock_2Hz\""
+      },
+      "id": "\"Clock_2Hz\""
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"Clock_5Hz\""
+      },
+      "id": "\"Clock_5Hz\""
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"Clock_Byte\""
+      },
+      "id": "\"Clock_Byte\""
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"DiagStatusUpdate\""
+      },
+      "id": "\"DiagStatusUpdate\""
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"FirstScan\""
+      },
+      "id": "\"FirstScan\""
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "PlcProgram.Read",
+      "params": {
+        "var": "\"System_Byte\""
+      },
+      "id": "\"System_Byte\""
+    }
+  ],
+  "response": [
+    {
+      "jsonrpc": "2.0",
+      "id": "\"MyDataBlock\".\"MyBoolean1\"",
+      "result": true
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "\"MyDataBlock\".\"MyBoolean2\"",
+      "result": false
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "\"MyDataBlock\".\"MyInteger\"",
+      "result": 12348
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "\"MyDataBlock\".\"MyInteger1\"",
+      "result": 456
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "\"AlwaysFALSE\"",
+      "result": false
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "\"AlwaysTRUE\"",
+      "result": true
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "\"Clock_0.5Hz\"",
+      "result": true
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "\"Clock_0.625Hz\"",
+      "result": false
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "\"Clock_1.25Hz\"",
+      "result": true
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "\"Clock_10Hz\"",
+      "result": true
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "\"Clock_1Hz\"",
+      "result": true
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "\"Clock_2.5Hz\"",
+      "result": false
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "\"Clock_2Hz\"",
+      "result": true
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "\"Clock_5Hz\"",
+      "result": true
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "\"Clock_Byte\"",
+      "result": 187
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "\"DiagStatusUpdate\"",
+      "result": false
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "\"FirstScan\"",
+      "result": false
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "\"System_Byte\"",
+      "result": 4
+    }
+  ]
+}

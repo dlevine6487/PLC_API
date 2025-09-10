@@ -26,9 +26,12 @@ class Store {
         if (mainWindow && !mainWindow.isDestroyed()) {
             // Create a serializable copy of the state
             const stateForRenderer = { ...this.state };
-            delete stateForRenderer.db; // remove non-serializable properties
+            
+            delete stateForRenderer.db;
             delete stateForRenderer.mainWindow;
             delete stateForRenderer.pollTimer;
+            delete stateForRenderer.plcApiInstance;
+            delete stateForRenderer.viewerWindows;
 
             mainWindow.webContents.send('state-update', stateForRenderer);
         }

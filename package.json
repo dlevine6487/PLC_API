@@ -4,7 +4,10 @@
   "description": "Modern desktop application for monitoring Siemens S7-series PLCs.",
   "main": "src/main.js",
   "scripts": {
-    "start": "electron .",
+    "build:main": "esbuild src/views/main/renderer.js --bundle --outfile=src/views/main/bundle.js --platform=browser",
+    "build:graph": "esbuild src/views/graph/renderer.js --bundle --outfile=src/views/graph/bundle.js --platform=browser",
+    "build": "npm run build:main && npm run build:graph",
+    "start": "npm run build && electron .",
     "test": "xvfb-run --auto-servernum --server-args='-screen 0 1280x1024x24' ./node_modules/.bin/playwright test",
     "postinstall": "electron-rebuild"
   },
@@ -12,6 +15,8 @@
   "license": "ISC",
   "dependencies": {
     "better-sqlite3": "^11.1.2",
+    "chart.js": "^4.4.3",
+    "chartjs-adapter-date-fns": "^3.0.0",
     "electron": "28.3.0",
     "node-fetch": "^3.3.2",
     "xml2js": "^0.6.2"
@@ -19,6 +24,7 @@
   "devDependencies": {
     "@playwright/test": "^1.55.0",
     "electron-rebuild": "^3.2.9",
+    "esbuild": "^0.23.0",
     "js-yaml": "^4.1.0"
   }
 }
