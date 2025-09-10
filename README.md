@@ -1,6 +1,7 @@
 # PLC Web API Dashboard
 
 A desktop application for monitoring and interacting with Siemens S7 PLCs (1200/1500) that have the web API enabled. Built with Electron.
+<img width="1917" height="1073" alt="overview" src="https://github.com/user-attachments/assets/1018c03f-3f80-4454-b4fc-e682d369f7a6" />
 
 ## Features
 
