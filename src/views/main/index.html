@@ -40,9 +40,10 @@
                 <nav class="viewers-nav">
                     <ul>
                         <li><a href="#" id="view-alarms-btn"><i class="fa-solid fa-triangle-exclamation"></i> Alarms <span id="alarm-badge" class="notification-badge">0</span></a></li>
+                        <li><a href="#" id="view-trends-btn"><i class="fa-solid fa-chart-line"></i> Trend Viewer</a></li>
+                        <li><a href="#" id="view-history-btn"><i class="fa-solid fa-table-list"></i> History Table</a></li>
                         <li><a href="#" id="view-diagnostics-btn"><i class="fa-solid fa-file-medical"></i> Diagnostic Buffer</a></li>
                         <li><a href="#" id="view-syslog-btn"><i class="fa-solid fa-server"></i> Syslog</a></li>
-                        <li><a href="#" id="view-history-btn"><i class="fa-solid fa-table-list"></i> History Table</a></li>
                         <li><a href="#" id="view-debug-btn"><i class="fa-solid fa-bug"></i> API Debug</a></li>
                     </ul>
                 </nav>
@@ -79,7 +80,7 @@
                 </div>
                 <div class="table-container">
                     <table id="all-tags-table">
-                        <thead><tr><th>SOURCE</th><th>TAG NAME</th><th>VALUE</th><th>TYPE</th><th>ACTIONS</th></tr></thead>
+                        <thead><tr><th>SOURCE</th><th>TAG NAME</th><th>VALUE</th><th>TYPE</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -93,7 +94,7 @@
                 </div>
                 <div class="table-container">
                     <table id="lookup-table">
-                        <thead><tr><th>VARIABLE</th><th>VALUE</th><th>ACTION</th></tr></thead>
+                        <thead><tr><th>VARIABLE</th><th>VALUE</th><th>STATUS</th><th>ACTION</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -158,6 +159,6 @@
     </div>
     
     <div id="toast-container" class="toast-container"></div>
-    <script src="renderer.js"></script>
+    <script src="bundle.js"></script>
 </body>
 </html>

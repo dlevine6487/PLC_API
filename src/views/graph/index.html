@@ -2,19 +2,42 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Tag History Graph</title>
+    <title>Tag Trend Viewer</title>
     <link rel="stylesheet" href="../../assets/css/styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.umd.min.js"></script>
+    <style>
+        .viewer-body { display: flex; flex-direction: column; height: 100vh; }
+        .graph-content-wrapper { display: flex; flex-direction: row; flex-grow: 1; min-height: 0; }
+        .graph-container { flex-grow: 1; position: relative; }
+        .legend-container { width: 300px; padding: 1rem; border-left: 1px solid var(--border-color); overflow-y: auto; flex-shrink: 0; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 8px; font-size: 0.875rem; cursor: pointer; }
+        .legend-color-box { width: 16px; height: 16px; margin-right: 8px; border: 1px solid #ccc; flex-shrink: 0; }
+        .legend-item input { margin-right: 8px; }
+    </style>
 </head>
 <body class="viewer-body">
     <div class="content-card">
-        <div class="card-header"><h2>Tag History Graph</h2></div>
-        <div class="table-container" style="padding: 1rem;"><canvas id="historyChart"></canvas></div>
+        <div class="card-header">
+            <h2>Live Tag Trends</h2>
+            <select id="time-range-select" class="lookup-select">
+                <option value="1">Last 1 Minute</option>
+                <option value="2">Last 2 Minutes</option>
+                <option value="5">Last 5 Minutes</option>
+                <option value="10" selected>Last 10 Minutes</option>
+            </select>
+        </div>
+        <div class="graph-content-wrapper">
+            <div class="graph-container">
+                <canvas id="historyChart"></canvas>
+            </div>
+            <div class="legend-container">
+                <h3>Plotted Tags</h3>
+                <div id="chart-legend"></div>
+            </div>
+        </div>
         <div class="viewer-actions">
-            <button id="export-graph-csv-btn" class="action-btn-secondary">Export Data (CSV)</button>
+            <button id="export-graph-csv-btn" class="action-btn-secondary">Export Visible Data (CSV)</button>
         </div>
     </div>
-    <script src="renderer.js"></script>
+    <script src="bundle.js"></script>
 </body>
 </html>

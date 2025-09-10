@@ -9,7 +9,7 @@ contextBridge.exposeInMainWorld('api', {
     // PLC Communication
     connectPlc: (ip) => ipcRenderer.invoke('plc:connect', ip),
     disconnectPlc: () => ipcRenderer.invoke('plc:disconnect'),
-    writePlc: (tagName, value) => ipcRenderer.invoke('plc:write', { tagName, value }),
+    writePlc: (data) => ipcRenderer.invoke('plc:write', data),
     setPollRate: (rate) => ipcRenderer.send('plc:set-poll-rate', rate),
 
     // Window Management & Events
@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld('api', {
     onStateUpdate: (callback) => ipcRenderer.on('state-update', (event, state) => callback(state)),
 
     // Tag and Quick Actions
-    logTagToDb: (data) => ipcRenderer.invoke('db:log-tag', data),
+    setLoggingState: (data) => ipcRenderer.invoke('logging:set-state', data),
     setTrendingState: (data) => ipcRenderer.invoke('trending:set-state', data),
     clearAllHistory: () => ipcRenderer.invoke('db:clear-history'),
     clearAllTrends: () => ipcRenderer.invoke('trending:clear-all'),

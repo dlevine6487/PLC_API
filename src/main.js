@@ -15,8 +15,7 @@ const PLC_CONFIG_PATH = path.join(app.getPath('userData'), 'plc-config.json');
 const SESSION_FILE_PATH = path.join(app.getPath('userData'), 'session.json');
 
 // --- Centralized State Management ---
-// All state is now managed in src/state/store.js
-let mainWindow; // Keep mainWindow as a top-level reference for now.
+let mainWindow; 
 const MAX_POLLING_ERRORS = 5;
 
 // --- Database Setup ---
@@ -68,7 +67,6 @@ function createMainWindow() {
         mainWindow = null;
         store.setState({ mainWindow: null });
     });
-    // Add mainWindow reference to the store so other modules can access it
     store.setState({ mainWindow });
 }
 
@@ -82,7 +80,7 @@ async function loadSavedSession() {
             return true;
         }
     } catch (error) {
-        // It's okay if the file doesn't exist on first launch
+        // It's okay if the file doesn't exist
     }
     return false;
 }
@@ -93,8 +91,9 @@ function startPolling(rate) {
     console.log(`[Main] Starting polling at ${rate}ms.`);
     const { tagConfig } = store.getState();
     const newActiveTags = Object.values(tagConfig).flatMap(source => source.tags || []).filter(tag => !tag.error);
+    store.setState({ activePollingTags: newActiveTags }); // Set the initial list of tags to poll
     const newPollTimer = setInterval(pollMainData, rate);
-    store.setState({ activePollingTags: newActiveTags, pollTimer: newPollTimer, pollingErrorCount: 0 });
+    store.setState({ pollTimer: newPollTimer, pollingErrorCount: 0 });
 }
 
 function stopPolling() {
@@ -107,7 +106,7 @@ function stopPolling() {
 }
 
 async function pollMainData() {
-    const { plcApiInstance, activePollingTags } = store.getState();
+    const { plcApiInstance, activePollingTags, loggedTags, tagConfig } = store.getState();
     if (!plcApiInstance || !plcApiInstance.sessionId || activePollingTags.length === 0) return;
 
     try {
@@ -116,21 +115,44 @@ async function pollMainData() {
         let currentActiveTags = [...activePollingTags];
 
         if (responses && Array.isArray(responses)) {
+            const logStmt = db.prepare('INSERT INTO history (tagName, value, timestamp, dataType, quality) VALUES (?, ?, ?, ?, ?)');
+            const logTransaction = db.transaction((logs) => {
+                for (const log of logs) logStmt.run(...log);
+            });
+            const logsToInsert = [];
+
             responses.forEach(response => {
                 const tagName = response.id;
+                let quality = 'UNKNOWN';
+                let value = '-';
+
                 if (response.error) {
                     if (response.error.message === 'Address does not exist') {
                         console.warn(`[PLC API] Tag does not exist on PLC: ${tagName}. Removing from poll list.`);
-                        currentLiveValues[tagName] = { value: '-', quality: 'BAD_TAG' };
+                        quality = 'BAD_TAG';
                         currentActiveTags = currentActiveTags.filter(t => t.fullTagName !== tagName);
                     } else {
-                        currentLiveValues[tagName] = { value: '-', quality: 'READ_ERROR' };
+                        quality = 'READ_ERROR';
                     }
                 } else if ('result' in response) {
-                    const value = (response.result?.value !== undefined) ? response.result.value : response.result;
-                    currentLiveValues[tagName] = { value, quality: 'GOOD' };
+                    value = (response.result?.value !== undefined) ? response.result.value : response.result;
+                    quality = 'GOOD';
+                }
+                
+                currentLiveValues[tagName] = { value, quality };
+
+                // --- NEW LOGGING LOGIC ---
+                if (loggedTags.includes(tagName) && quality === 'GOOD') {
+                    const tagInfo = activePollingTags.find(t => t.fullTagName === tagName);
+                    if (tagInfo) {
+                        logsToInsert.push([tagName, String(value), new Date().toISOString(), tagInfo.type, quality]);
+                    }
                 }
             });
+
+            if (logsToInsert.length > 0) {
+                logTransaction(logsToInsert);
+            }
         } else if (responses === null && plcApiInstance.sessionId) {
             throw new Error("Invalid or null response from bulk read");
         }
@@ -139,7 +161,7 @@ async function pollMainData() {
             liveValues: currentLiveValues,
             activePollingTags: currentActiveTags,
             pollingErrorCount: 0,
-            plcState: { connected: true, ip: plcApiInstance.config.plcIp, sessionId: plcApiInstance.sessionId }
+            plcState: { ...store.getState().plcState, connected: true, ip: plcApiInstance.config.plcIp, sessionId: plcApiInstance.sessionId }
         });
 
     } catch (error) {
@@ -151,11 +173,11 @@ async function pollMainData() {
             console.error(`[Main] CRITICAL: Reached max polling errors. Disconnecting.`);
             const currentPlcApi = store.getState().plcApiInstance;
             stopPolling();
-            if (currentPlcApi) currentPlcApi.sessionId = null; // Invalidate session
+            if (currentPlcApi) currentPlcApi.sessionId = null;
             store.setState({
                 liveValues: {},
                 plcApiInstance: currentPlcApi,
-                plcState: { connected: false, ip: currentPlcApi?.config.plcIp, error: 'Connection Lost' },
+                plcState: { ...store.getState().plcState, connected: false, ip: currentPlcApi?.config.plcIp, error: 'Connection Lost' },
                 pollingErrorCount: 0
             });
         } else {
@@ -167,12 +189,10 @@ async function pollMainData() {
 
 // --- Application Lifecycle ---
 app.whenReady().then(async () => {
-    // Initialize
     fetch = (await import('node-fetch')).default;
     initializeApi(fetch);
     const plcConfig = await loadOrCreatePlcConfig();
 
-    // Set initial state in the store
     store.setState({
         plcApiInstance: null,
         plcConfig: plcConfig,
@@ -181,37 +201,36 @@ app.whenReady().then(async () => {
         pollTimer: null,
         viewerWindows: {},
         plottedTags: [],
+        loggedTags: [], // Added this
         mockAlarms: [],
         activePollingTags: [],
         pollingErrorCount: 0,
         db: db,
         SESSION_FILE_PATH: SESSION_FILE_PATH,
         DEFAULT_PLC_IP: DEFAULT_PLC_IP,
-        mainWindow: null, // will be set in createMainWindow
-        plcState: { connected: false, ip: null, sessionId: null, error: null }
+        mainWindow: null,
+        plcState: { connected: false, ip: null, sessionId: null, error: null, lastUsedIp: DEFAULT_PLC_IP }
     });
 
-    // Register IPC handlers, passing them the store and necessary functions
     registerIpcHandlers(store, { startPolling, stopPolling, pollMainData });
-
-    // Create main window (which will also update the store with its reference)
     createMainWindow();
 
-    // Setup Menu
     const menu = Menu.buildFromTemplate([
         { label: 'File', submenu: [{ role: 'quit' }] },
         { label: 'View', submenu: [{ role: 'reload' }, { role: 'forceReload' }, { role: 'toggleDevTools' }] }
     ]);
     Menu.setApplicationMenu(menu);
 
-    // Final setup after window loads
     mainWindow.webContents.on('did-finish-load', async () => {
         const sessionLoaded = await loadSavedSession();
         if (sessionLoaded) {
-            const { tagConfig } = store.getState();
+            const { tagConfig, plcState } = store.getState();
+            const lastUsedIp = plcState?.lastUsedIp || DEFAULT_PLC_IP;
             const newActiveTags = Object.values(tagConfig).flatMap(source => source.tags || []).filter(tag => !tag.error);
-            store.setState({ activePollingTags: newActiveTags });
-            // The store will be responsible for notifying the renderer
+            store.setState({ activePollingTags: newActiveTags, plcState: { ...plcState, lastUsedIp } });
+            
+            console.log(`[Main] Session loaded. Attempting to auto-connect to ${lastUsedIp}...`);
+            ipcMain.emit('plc:connect', { sender: mainWindow.webContents }, lastUsedIp);
         }
     });
 });
