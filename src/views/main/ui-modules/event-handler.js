@@ -1,11 +1,11 @@
-import D from './dom-elements.js';
 import * as U from './ui-updater.js';
 import { showToast } from './toast-notification.js';
 
-// This module will be initialized with the application's state.
+let D = {}; // Will be populated by the initializer
 let appState = {};
 
-export function initializeEventHandlers(state) {
+export function initializeEventHandlers(domElements, state) {
+    D = domElements;
     appState = state;
     setupEventListeners();
 }

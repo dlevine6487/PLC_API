@@ -1,4 +1,8 @@
-import D from './dom-elements.js';
+let D = {}; // Will be populated by the initializer
+
+export function initializeUiUpdater(domElements) {
+    D = domElements;
+}
 
 // --- UI Feedback Helpers ---
 export function showLoading() { D.loadingOverlay.classList.add('active'); }

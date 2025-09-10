@@ -49,6 +49,14 @@ function registerIpcHandlers(store, { startPolling, stopPolling, pollMainData })
         const { SESSION_FILE_PATH } = store.getState();
         store.setState({ tagConfig: newConfig });
         await fs.writeFile(SESSION_FILE_PATH, JSON.stringify(newConfig, null, 2));
+
+        // After updating the central state, notify the renderer process so it can update the UI.
+        // Get the window directly to avoid race conditions during app startup.
+        const mainWindow = BrowserWindow.getAllWindows()[0];
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('state-update', { tagConfig: newConfig });
+        }
+
         return { success: true, config: newConfig, warnings: allWarnings };
     });
 
