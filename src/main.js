@@ -85,13 +85,65 @@ async function loadSavedSession() {
     return false;
 }
 
-// --- Backend Polling Loop ---
+// --- Backend Polling & Reconnection Loop ---
+let reconnectTimer = null;
+
+function stopReconnectCycle() {
+    if (reconnectTimer) {
+        clearInterval(reconnectTimer);
+        reconnectTimer = null;
+        console.log('[Main] Reconnect cycle stopped.');
+    }
+}
+
+async function attemptReconnect() {
+    console.log('[Main] Attempting to reconnect...');
+    const { plcState, plcConfig } = store.getState();
+    const ip = plcState?.lastUsedIp;
+    if (!ip) {
+        console.error('[Main] Cannot reconnect, no last-used IP address found.');
+        stopReconnectCycle();
+        return;
+    }
+
+    try {
+        const plcApiInstance = await SiemensPLC_API.create(ip, plcConfig.username, plcConfig.password);
+        const result = await plcApiInstance.login();
+
+        if (result.success) {
+            console.log('[Main] Reconnect successful!');
+            stopReconnectCycle();
+            const pollRate = store.getState().plcState.pollRate || 1000;
+            store.setState({
+                plcApiInstance,
+                plcState: { ...store.getState().plcState, connected: true, ip, error: null }
+            });
+            startPolling(pollRate);
+        }
+    } catch (error) {
+        // Errors are expected if the PLC is offline, so we don't log them here to avoid spam.
+    }
+}
+
+function startReconnectCycle() {
+    stopPolling();
+    stopReconnectCycle();
+
+    const { plcState } = store.getState();
+    store.setState({ plcState: { ...plcState, connected: false, error: 'Reconnecting...' }});
+
+    reconnectTimer = setInterval(attemptReconnect, 2000);
+    console.log('[Main] Starting reconnect cycle.');
+}
+
+
 function startPolling(rate) {
     stopPolling();
+    stopReconnectCycle();
     console.log(`[Main] Starting polling at ${rate}ms.`);
     const { tagConfig } = store.getState();
     const newActiveTags = Object.values(tagConfig).flatMap(source => source.tags || []).filter(tag => !tag.error);
-    store.setState({ activePollingTags: newActiveTags }); // Set the initial list of tags to poll
+    store.setState({ activePollingTags: newActiveTags, plcState: { ...store.getState().plcState, pollRate: rate } });
     const newPollTimer = setInterval(pollMainData, rate);
     store.setState({ pollTimer: newPollTimer, pollingErrorCount: 0 });
 }
@@ -170,16 +222,15 @@ async function pollMainData() {
         console.warn(`[Main] Polling attempt ${pollingErrorCount}/${MAX_POLLING_ERRORS} failed. Error: ${error.message}`);
 
         if (pollingErrorCount >= MAX_POLLING_ERRORS) {
-            console.error(`[Main] CRITICAL: Reached max polling errors. Disconnecting.`);
+            console.error(`[Main] CRITICAL: Reached max polling errors. Initiating auto-reconnect.`);
             const currentPlcApi = store.getState().plcApiInstance;
-            stopPolling();
-            if (currentPlcApi) currentPlcApi.sessionId = null;
+            if (currentPlcApi) currentPlcApi.sessionId = null; // Invalidate session
             store.setState({
                 liveValues: {},
                 plcApiInstance: currentPlcApi,
-                plcState: { ...store.getState().plcState, connected: false, ip: currentPlcApi?.config.plcIp, error: 'Connection Lost' },
                 pollingErrorCount: 0
             });
+            startReconnectCycle();
         } else {
             store.setState({ pollingErrorCount });
         }
@@ -212,7 +263,7 @@ app.whenReady().then(async () => {
         plcState: { connected: false, ip: null, sessionId: null, error: null, lastUsedIp: DEFAULT_PLC_IP }
     });
 
-    registerIpcHandlers(store, { startPolling, stopPolling, pollMainData });
+    registerIpcHandlers(store, { startPolling, stopPolling, pollMainData, stopReconnectCycle });
     createMainWindow();
 
     const menu = Menu.buildFromTemplate([

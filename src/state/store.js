@@ -26,6 +26,12 @@ class Store {
         if (mainWindow && !mainWindow.isDestroyed()) {
             // Create a serializable copy of the state
             const stateForRenderer = { ...this.state };
+
+            if (stateForRenderer.mockAlarms) {
+                stateForRenderer.unacknowledgedAlarmCount = stateForRenderer.mockAlarms.filter(
+                    a => !a.acknowledgement || a.acknowledgement.state !== 'acknowledged'
+                ).length;
+            }
             
             delete stateForRenderer.db;
             delete stateForRenderer.mainWindow;

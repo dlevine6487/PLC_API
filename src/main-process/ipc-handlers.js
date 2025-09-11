@@ -5,7 +5,7 @@ const { SiemensPLC_API, getLastApiCall } = require('../api/siemens-plc.js');
 const fileParsers = require('../utils/file-parsers.js');
 const { existsSync } = require('fs');
 
-function registerIpcHandlers(store, { startPolling, stopPolling, pollMainData }) {
+function registerIpcHandlers(store, { startPolling, stopPolling, pollMainData, stopReconnectCycle }) {
 
     // --- File and Session Handlers ---
     ipcMain.handle('dialog:open-file', async () => {
@@ -99,6 +99,7 @@ function registerIpcHandlers(store, { startPolling, stopPolling, pollMainData })
     ipcMain.handle('plc:disconnect', async () => {
         const { plcApiInstance } = store.getState();
         stopPolling();
+        stopReconnectCycle(); // Explicitly stop reconnect attempts on manual disconnect
         if (plcApiInstance) await plcApiInstance.logout();
         store.setState({ plcApiInstance: null, plcState: { ...store.getState().plcState, connected: false } });
         return { success: true };

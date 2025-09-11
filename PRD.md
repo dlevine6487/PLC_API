@@ -40,10 +40,14 @@ Hardcoded PLC credentials must be removed from the `main.js` source code. A `plc
 
 The data polling mechanism in `main.js` must be refactored to use a bulk request. Instead of reading tags one by one, all tags will be grouped into a single JSON-RPC request array and sent to the PLC in one API call per polling cycle to improve performance.
 
-### 3.4. Priority 4: Enhance User Feedback
+### 3.4. Priority 4: Enhance User Feedback & Interaction
 
 *   **Write Feedback:** When a user writes a new value to a tag, the application must provide immediate visual feedback. This includes both a "toast" notification (e.g., "Write Successful") and a brief color flash on the corresponding table cell.
+    *   **Status:** ✅ **Implemented.** (Verified existing implementation)
 *   **"Log" & "Plot" Buttons:** Add dedicated "Log" and "Plot" buttons to each tag in the main dashboard tables to allow for manual data logging and graphing.
+    *   **Status:** ✅ **Implemented.**
+*   **Double-Click to Write:** Users can double-click on a tag's value in the main table to open the write modification window directly.
+    *   **Status:** ✅ **Implemented.**
 
 ## 4. Core System Requirements
 
@@ -58,7 +62,9 @@ Historical tag data will be stored in a local SQLite database (`history.db`). Po
 
 ### 4.4. Connection Handling
 *   The application must automatically attempt to reconnect to the PLC every 2 seconds if a connection is lost.
+    *   **Status:** ✅ **Implemented.**
 *   When the user opens the connection modal, it should be pre-filled with the IP address from `plc-config.json`, but the user can override this value for the current session.
+    *   **Status:** ✅ **Implemented.** (Verified existing implementation)
 
 ### 4.5. Viewer Windows
 *   Separate windows for Alarms, Diagnostics, Syslog, History Table, and History Graph must be available.
@@ -67,3 +73,7 @@ Historical tag data will be stored in a local SQLite database (`history.db`). Po
 ### 4.6. Data Export
 *   All viewer windows must provide a feature to export their current data.
 *   The "Save As" dialog for exports will suggest a simple default filename (e.g., `Alarms_Export.csv`), which the user can then change as needed.
+
+### 4.7. UI/UX Reliability
+*   **Stale Data Indicator:** When the PLC connection is lost, tag values in the UI must visually indicate that they are stale (e.g., by changing color and style) to prevent misinterpretation by the user.
+    *   **Status:** ✅ **Implemented.**

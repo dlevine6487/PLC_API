@@ -125,41 +125,40 @@ function main() {
         const sourcesCount = tagConfig ? Object.keys(tagConfig).length : 0;
         D.activeTagsCountEl.textContent = totalTags;
         D.sourcesCountEl.textContent = sourcesCount;
-        renderAllTagsTable(tagConfig, liveValues);
+        renderAllTagsTable(tagConfig, liveValues, plcState);
         renderLookupSelect(tagConfig);
-        renderLookupTable(tagConfig, liveValues);
+        renderLookupTable(tagConfig, liveValues, plcState);
         updateConnectionStatusUI(plcState);
     }
 
-    const renderTagRow = (tag, liveValues) => {
+    const renderTagRow = (tag, liveValues, plcState) => {
         const liveData = liveValues[tag.fullTagName];
         const value = liveData ? liveData.value : '-';
         const quality = tag.error ? 'UDT_NOT_SUPPORTED' : (liveData ? liveData.quality : 'UNKNOWN');
+        const isConnected = plcState ? plcState.connected : false;
         
         let valueDisplay = String(value);
         let valueClass = '';
         if (quality !== 'GOOD') {
             valueDisplay = tag.error || quality;
             valueClass = 'quality-bad';
+        } else if (!isConnected && liveData) {
+            valueClass = 'quality-stale';
         }
         
-        const actionsBtnHtml = `<button class="action-icon-btn" data-tag-name='${tag.fullTagName}' title="Tag Actions"><i class="fa-solid fa-pen-to-square"></i></button>`;
-
-        let statusIconsHtml = '';
         const tagState = appState.tagStates ? appState.tagStates[tag.fullTagName] : null;
-        if (tagState) {
-            if (tagState.isLogging) {
-                statusIconsHtml += `<i class="fa-solid fa-database" title="Logging Enabled"></i>`;
-            }
-            if (tagState.isTrending) {
-                statusIconsHtml += `<i class="fa-solid fa-chart-line" title="Trending Enabled" style="margin-left: 8px;"></i>`;
-            }
-        }
+        const isLogging = tagState ? tagState.isLogging : false;
+        const isTrending = tagState ? tagState.isTrending : false;
 
-        return { valueDisplay, valueClass, statusIconsHtml, actionsBtnHtml };
+        const editBtnHtml = `<button class="action-icon-btn" data-tag-name="${tag.fullTagName}" data-action="edit" title="Edit/Write Tag"><i class="fa-solid fa-pen-to-square"></i></button>`;
+        const logBtnHtml = `<button class="action-icon-btn ${isLogging ? 'active' : ''}" data-tag-name="${tag.fullTagName}" data-action="log" title="Toggle Logging"><i class="fa-solid fa-database"></i></button>`;
+        const plotBtnHtml = `<button class="action-icon-btn ${isTrending ? 'active' : ''}" data-tag-name="${tag.fullTagName}" data-action="plot" title="Toggle Trending"><i class="fa-solid fa-chart-line"></i></button>`;
+        const actionsBtnHtml = `<div class="action-buttons-group">${editBtnHtml}${logBtnHtml}${plotBtnHtml}</div>`;
+
+        return { valueDisplay, valueClass, statusIconsHtml: '', actionsBtnHtml };
     };
 
-    function renderAllTagsTable(tagConfig, liveValues) {
+    function renderAllTagsTable(tagConfig, liveValues, plcState) {
         const fragment = document.createDocumentFragment();
         if (tagConfig) {
             Object.entries(tagConfig).forEach(([filename, source]) => {
@@ -169,15 +168,15 @@ function main() {
                         return;
                     }
 
-                    const { valueDisplay, valueClass, statusIconsHtml, actionsBtnHtml } = renderTagRow(tag, liveValues);
+                    const { valueDisplay, valueClass, statusIconsHtml, actionsBtnHtml } = renderTagRow(tag, liveValues, plcState);
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${filename}</td>
                         <td>${tag.name}</td>
                         <td class="${valueClass}" data-tag-name='${tag.fullTagName}'>${valueDisplay}</td>
                         <td>${tag.type}</td>
-                        <td>${statusIconsHtml}</td>
-                        <td>${actionsBtnHtml}</td>
+                        <td class="status-column">${statusIconsHtml}</td>
+                        <td class="actions-column">${actionsBtnHtml}</td>
                     `;
                     fragment.appendChild(row);
                 });
@@ -203,7 +202,7 @@ function main() {
         }
     }
 
-    function renderLookupTable(tagConfig, liveValues) {
+    function renderLookupTable(tagConfig, liveValues, plcState) {
         if (!tagConfig) return;
         const selectedSourceName = D.lookupSelect.value;
         const source = Object.values(tagConfig).find(s => s.sourceName === selectedSourceName);
@@ -213,7 +212,7 @@ function main() {
         }
         const fragment = document.createDocumentFragment();
         source.tags.forEach(tag => {
-            const { valueDisplay, valueClass, statusIconsHtml, actionsBtnHtml } = renderTagRow(tag, liveValues);
+            const { valueDisplay, valueClass, statusIconsHtml, actionsBtnHtml } = renderTagRow(tag, liveValues, plcState);
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${tag.name}</td>
@@ -308,24 +307,26 @@ function main() {
     
     function handleTableButtonClick(event) {
         const button = event.target.closest('.action-icon-btn');
-        if (!button) {
-            return;
-        }
-
-        if (!appState || !appState.tagConfig) {
-            return;
-        }
+        if (!button) return;
 
         const tagName = button.dataset.tagName;
-        if (!tagName) {
-            return;
-        }
+        const action = button.dataset.action;
+        if (!tagName || !action) return;
 
         const allTags = Object.values(appState.tagConfig).flatMap(source => source.tags || []);
         const tagObject = allTags.find(t => t.fullTagName === tagName);
+        if (!tagObject) return;
 
-        if (tagObject) {
-            openTagActionsModal(tagObject);
+        switch (action) {
+            case 'edit':
+                openTagActionsModal(tagObject);
+                break;
+            case 'log':
+                toggleLogging(tagName);
+                break;
+            case 'plot':
+                toggleTrending(tagName);
+                break;
         }
     }
 
@@ -410,8 +411,7 @@ function main() {
         D.writeConfirmModal.classList.add('active');
     }
 
-    async function toggleLogging() {
-        const tagName = appState.currentActionTag.fullTagName;
+    async function toggleLogging(tagName) {
         const state = appState.tagStates[tagName];
         state.isLogging = !state.isLogging;
         
@@ -421,22 +421,33 @@ function main() {
             showToast({ title: `Logging enabled for ${tagName}` });
         } else {
             // If we turn off logging, we must also turn off trending
-            state.isTrending = false;
-            await window.api.setTrendingState({ tagName, isTrending: false });
+            if (state.isTrending) {
+                state.isTrending = false;
+                await window.api.setTrendingState({ tagName, isTrending: false });
+            }
             showToast({ title: `Logging disabled for ${tagName}` });
         }
-        // --- FIX: Directly update the buttons for instant feedback ---
-        updateTagActionButtons();
+        renderAll(appState.tagConfig, appState.liveValues, appState.plcState);
     }
 
-    async function toggleTrending() {
-        const tagName = appState.currentActionTag.fullTagName;
+    async function toggleTrending(tagName) {
         const state = appState.tagStates[tagName];
+
+        // Prevent enabling trending if logging is off
+        if (!state.isLogging && !state.isTrending) {
+            showToast({
+                title: 'Action Required',
+                details: 'Enable Historical Logging for this tag before enabling trending.',
+                type: 'warning',
+                duration: 5000
+            });
+            return;
+        }
+
         state.isTrending = !state.isTrending;
         await window.api.setTrendingState({ tagName, isTrending: state.isTrending });
         showToast({ title: `Trending ${state.isTrending ? 'enabled' : 'disabled'} for ${tagName}` });
-        // --- FIX: Directly update the buttons for instant feedback ---
-        updateTagActionButtons();
+        renderAll(appState.tagConfig, appState.liveValues, appState.plcState);
     }
 
     async function handleClearHistory() {
@@ -452,6 +463,7 @@ function main() {
                 state.isTrending = false;
             });
             showToast({ title: 'All trends have been cleared.' });
+            renderAll(appState.tagConfig, appState.liveValues, appState.plcState);
         } else {
             showToast({ title: 'Failed to clear trends.', type: 'error' });
         }
@@ -471,6 +483,23 @@ function main() {
     // ====================================================================================
     //  Master Event Listener
     // ====================================================================================
+
+    document.addEventListener('dblclick', (event) => {
+        const cell = event.target.closest('td[data-tag-name]');
+        if (!cell) return;
+
+        const tagName = cell.dataset.tagName;
+        if (!tagName) return;
+
+        if (!appState || !appState.tagConfig) return;
+
+        const allTags = Object.values(appState.tagConfig).flatMap(source => source.tags || []);
+        const tagObject = allTags.find(t => t.fullTagName === tagName);
+
+        if (tagObject) {
+            openTagActionsModal(tagObject);
+        }
+    });
     
     document.addEventListener('click', (event) => {
         const target = event.target;
@@ -529,7 +558,14 @@ function main() {
     window.api.onStateUpdate(newState => {
         const isNewSession = newState.tagConfig && (!appState.tagConfig || Object.keys(newState.tagConfig).length !== Object.keys(newState.tagConfig).length);
         Object.assign(appState, newState);
-        const { tagConfig, liveValues, plcState, DEFAULT_PLC_IP } = appState;
+        const { tagConfig, liveValues, plcState, DEFAULT_PLC_IP, unacknowledgedAlarmCount } = appState;
+
+        const alarmBadge = document.getElementById('alarm-badge');
+        if (alarmBadge) {
+            const count = unacknowledgedAlarmCount || 0;
+            alarmBadge.textContent = count;
+            alarmBadge.style.display = count > 0 ? 'inline-block' : 'none';
+        }
 
         if (tagConfig && Object.keys(tagConfig).length > 0) {
             if (D.appContainer.style.display === 'none') {
