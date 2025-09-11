@@ -147,3 +147,15 @@ The test script and application code already use `async/await`, which is essenti
 -   **Content Security Policy (CSP):** The existing CSP (`script-src 'self' 'unsafe-inline'`) is a good start but can be improved. Avoid `'unsafe-inline'` if possible by refactoring inline scripts and event handlers (`onclick`, etc.) into your main JS files.
 -   **Validate User Input:** Never trust user input. Sanitize and validate all data, especially data that will be written to the DOM (to prevent XSS) or used in database queries (to prevent SQL injection).
 -   **Check Dependencies:** Regularly audit your dependencies for known vulnerabilities using `npm audit`.
+
+---
+
+## 6. Recent Applications of Excellence Principles (v1.1)
+
+The development cycle for version 1.1 served as a practical application of several principles outlined in this document.
+
+-   **Robust Error Handling & State Management:** The implementation of the **auto-reconnect** feature is a prime example of improving resilience. Instead of simply failing, the application now enters a controlled state (`Reconnecting...`) and actively tries to recover. This is coupled with the **stale data indicator**, which provides clear, immediate feedback to the user about the quality of the data they are seeing, preventing potential misinterpretation of stale values. This demonstrates a commitment to both backend robustness and frontend clarity.
+
+-   **Code Quality & Maintainability:** The process of fixing `BUG-01` (inoperable buttons) highlighted the importance of a clean, single source of truth for application state. The fix involved ensuring the central state store (`src/state/store.js`) was the definitive source for the alarm count and that the UI consistently reflected this state by re-rendering from it. This avoids state-related bugs and makes the application easier to debug and maintain.
+
+-   **Iterative UI/UX Enhancement:** The addition of **direct action buttons** ("Log" and "Plot") and the **double-click-to-write** functionality were small, targeted changes that significantly improve user workflow. They reduce clicks and make common actions more intuitive, demonstrating a focus on iterative UX improvements based on user needs.

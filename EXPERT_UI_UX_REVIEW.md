@@ -94,13 +94,22 @@ This report provides a detailed, scenario-based analysis and a prioritized list 
 
 This action plan is ranked by a combination of impact (safety, efficiency) and estimated implementation effort, based on an analysis of the v1.1 codebase.
 
-| Priority | Recommendation                                                               | Impact | Effort | Rationale                                                                        |
-| :------- | :--------------------------------------------------------------------------- | :----: | :----: | :------------------------------------------------------------------------------- |
-| **1**    | Implement a highly visible, persistent indicator for all "Forced" tags.      |  High  | Medium | **Critical Safety Win.** Prevents forces from being forgotten. The `renderTagRow` function is the place to start. |
-| **2**    | Implement a responsive layout for tablet and mobile screens.                 |  High  |  High  | **Core Usability.** The app is not viable on tablets without this. Requires significant CSS work with media queries. |
-| **3**    | Make alarm indicators directly clickable, linking to a filtered fault log.   |  High  | Medium | Significantly reduces time-to-diagnose during a failure, lowering downtime.      |
-| **4**    | Add contextual "Quick Trend" pop-ups for analog points.                      | Medium | Medium | Dramatically improves workflow efficiency for a common monitoring task.            |
-| **5**    | Enhance the "Force" confirmation dialog by briefly disabling the button.     | Medium |   Low  | **Quick Win.** A small change in `renderer.js` that further reduces the risk of error. |
-| **6**    | Add preset time-range buttons (1hr, 8hr, 24hr) to trend views.             | Medium |   Low  | Streamlines a very common user workflow in the `graph` viewer.                 |
-| **7**    | Enrich fault logs with human-readable descriptions and better status colors. |  High  |  High  | Reduces cognitive load and reliance on expert knowledge. Requires a data mapping solution. |
-| **8**    | Implement Role-Based Access Control (RBAC) for sensitive functions.          |  High  |  High  | Long-term strategic improvement for security and safety.                         |
+| Priority | Recommendation                                                               | Status (v1.1) | Impact | Effort | Rationale                                                                        |
+| :------- | :--------------------------------------------------------------------------- | :-----------: | :----: | :----: | :------------------------------------------------------------------------------- |
+| **1**    | Implement a highly visible, persistent indicator for all "Forced" tags.      |   Pending   |  High  | Medium | **Critical Safety Win.** Prevents forces from being forgotten. The `renderTagRow` function is the place to start. |
+| **2**    | Implement a responsive layout for tablet and mobile screens.                 |   Pending   |  High  |  High  | **Core Usability.** The app is not viable on tablets without this. Requires significant CSS work with media queries. |
+| **3**    | Make alarm indicators directly clickable, linking to a filtered fault log.   |  Partially Addressed  |  High  | Medium | Significantly reduces time-to-diagnose during a failure, lowering downtime.      |
+| **4**    | Add contextual "Quick Trend" pop-ups for analog points.                      |  Partially Addressed  | Medium | Medium | Dramatically improves workflow efficiency for a common monitoring task.            |
+| **5**    | Enhance the "Force" confirmation dialog by briefly disabling the button.     |   Pending   | Medium |   Low  | **Quick Win.** A small change in `renderer.js` that further reduces the risk of error. |
+| **6**    | Add preset time-range buttons (1hr, 8hr, 24hr) to trend views.             |   Pending   | Medium |   Low  | Streamlines a very common user workflow in the `graph` viewer.                 |
+| **7**    | Enrich fault logs with human-readable descriptions and better status colors. |   Pending   |  High  |  High  | Reduces cognitive load and reliance on expert knowledge. Requires a data mapping solution. |
+| **8**    | Implement Role-Based Access Control (RBAC) for sensitive functions.          |   Pending   |  High  |  High  | Long-term strategic improvement for security and safety.                         |
+
+---
+
+## Changelog
+
+### v1.1 Changes (Branch: `feature/v1.1-final-updates`)
+*   **Recommendation #3 (Clickable Alarms):** Partially addressed. The alarm badge in the main UI sidebar is now functional and correctly displays the number of unacknowledged alarms, providing users with accurate, at-a-glance information.
+*   **Recommendation #4 (Quick Trends):** Partially addressed. The workflow for enabling trends has been significantly streamlined. Users can now enable/disable trending for a tag with a single click on a dedicated button in the main tag table, removing the need to open a modal window.
+*   **General Heuristics (Feedback on Action):** This area was strengthened by fixing the "Clear All" buttons to provide immediate UI feedback and by adding a new "double-click to write" feature, which makes a common workflow more efficient.

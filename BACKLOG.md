@@ -8,9 +8,7 @@ This document tracks known bugs, requested enhancements, and potential new featu
 
 | ID      | Bug Description                                                                      | Priority | Notes                                                                   |
 | :------ | :----------------------------------------------------------------------------------- | :------- | :---------------------------------------------------------------------- |
-| **BUG-01** | The "Clear All Alarms" and "Clear All Trends" buttons in Quick Actions are not functional. | High     | The buttons exist in the UI but the underlying `ipc-handler` may be missing or broken. |
 | **BUG-02** | The Diagnostic Buffer viewer does not appear to be working.                          | High     | Needs investigation to determine the root cause. The viewer may not be loading data correctly. |
-| **BUG-03** | When the PLC connection is lost, tag values do not visually indicate they are stale.   | Medium   | Last known values should be visually distinguished (e.g., turned red) to prevent misinterpretation. |
 | **BUG-04** | A Content Security Policy error is present in a view, but not in the Trend Viewer.   | Low      | Investigate the console logs for the specific view to identify and fix the CSP violation. |
 
 ---
@@ -38,3 +36,12 @@ This document tracks known bugs, requested enhancements, and potential new featu
 | **FE-04** | Prevent boolean tags from being processed or displayed in the Trend Viewer.             | Medium   | The Trend Viewer is for analog/numeric data. The application should filter out boolean tags when plotting. |
 | **FE-05** | Investigate polling rate impact on performance.                                         | Low      | Analyze how the polling rate affects UI responsiveness, graph updates, and SQLite database writes. |
 | **FE-06** | Research "VCI" integration with the alarm list.                                         | Low      | The term "VCI" needs clarification. This is a research task to determine feasibility and value. |
+
+---
+
+## 🔧 Technical Debt & Maintenance
+
+| ID      | Item Description                                                                     | Priority | Notes                                                                   |
+| :------ | :----------------------------------------------------------------------------------- | :------- | :---------------------------------------------------------------------- |
+| **TECH-01** | The Playwright snapshot test (`main-dashboard-loaded.png`) is out of date due to UI changes. | Low     | The test fails because the UI was updated (e.g., new action buttons). The snapshot needs to be updated to reflect the current UI. Run `npx playwright test --update-snapshots`. |
+| **TECH-02** | The Playwright test for modals is flaky.                                             | Low      | The test `Verify the tag actions and write confirmation modals work correctly` fails because it expects the splash screen to be visible, but a session is already active. The tests need to be isolated to not share state. |
