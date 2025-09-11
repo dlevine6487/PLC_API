@@ -64,3 +64,67 @@ test_cases:
         description: "Verify the connection modal is now hidden."
 
     backend_check: null
+
+  - id: TC_MODAL_INTERACTION_002
+    description: "Verify the tag actions and write confirmation modals work correctly."
+    resolutions:
+      - [1600, 900]
+    actions:
+      # Prerequisite: Load the main dashboard
+      - type: "wait_for_selector"
+        selector: "dropZone"
+      - type: "evaluate"
+        script: "window.api.parseFiles(['/app/tests/fixtures/test_db.xml'])"
+      - type: "wait"
+        duration: 500
+      - type: "wait_for_selector"
+        selector: "appContainer"
+
+      # Step 1: Click the action button for a specific tag
+      - type: "wait_for_selector"
+        selector: "button[data-tag-name='test_db.xml.TestInt']"
+        description: "Wait for the action button for TestInt to be available."
+      - type: "click"
+        selector: "button[data-tag-name='test_db.xml.TestInt']"
+        description: "Click the action button for the 'TestInt' tag."
+
+      # Step 2: Verify Tag Actions modal appears
+      - type: "wait_for_selector"
+        selector: "tagActionsModal"
+        description: "Wait for the Tag Actions modal to appear."
+
+      # Step 3: Interact with the modal
+      - type: "fill"
+        selector: "actionsModalInput"
+        value: "123"
+        description: "Enter a new value for the tag."
+      - type: "click"
+        selector: "actionsModalConfirmWriteBtn"
+        description: "Click the 'Write to PLC' button."
+
+      # Step 4: Verify Write Confirmation modal appears
+      - type: "wait_for_selector"
+        selector: "writeConfirmModal"
+        description: "Wait for the Write Confirmation modal to appear."
+
+      # Step 5: Cancel the write operation
+      - type: "click"
+        selector: "writeConfirmCancelBtn"
+        description: "Click the 'Cancel' button in the confirmation modal."
+
+      # Step 6: Verify confirmation modal is hidden
+      - type: "wait_for_hidden"
+        selector: "writeConfirmModal"
+        description: "Verify the confirmation modal is now hidden."
+
+      # Step 7: Close the main actions modal
+      - type: "click"
+        selector: "actionsModalCloseBtn"
+        description: "Click the 'Close' button in the Tag Actions modal."
+
+      # Step 8: Verify the actions modal is hidden
+      - type: "wait_for_hidden"
+        selector: "tagActionsModal"
+        description: "Verify the Tag Actions modal is now hidden."
+
+    backend_check: null
