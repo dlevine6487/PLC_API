@@ -7,10 +7,28 @@
 </head>
 <body class="viewer-body">
     <div class="content-card">
-        <div class="card-header"><h2>Live Syslog Entries</h2></div>
-        <pre id="syslog-content" class="table-container"></pre>
+        <div class="card-header">
+            <h2>Live Syslog Entries</h2>
+        </div>
+        <div class="table-container with-header">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Severity</th>
+                        <th>Source</th>
+                        <th>Event</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody id="syslog-table-body">
+                    <!-- Log entries will be inserted here -->
+                </tbody>
+            </table>
+        </div>
         <div class="viewer-actions">
-            <button id="save-syslog-btn" class="action-btn-secondary">Save as Text</button>
+            <button id="save-syslog-txt-btn" class="action-btn-secondary">Save as Text</button>
+            <button id="save-syslog-csv-btn" class="action-btn">Save as CSV</button>
         </div>
     </div>
     <script src="renderer.js"></script>

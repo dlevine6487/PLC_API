@@ -4,7 +4,11 @@ test_cases:
     resolutions:
       - [1600, 900]
     actions:
-      # Step 1: Verify the initial splash screen is visible
+      # Step 1: Ensure a clean state by clearing any previous session
+      - type: "clear_session"
+        description: "Clear the session to ensure the splash screen is shown."
+
+      # Step 2: Verify the initial splash screen is visible
       - type: "wait_for_selector"
         selector: "dropZone" # Using POM logical name
         description: "Wait for the initial file drop zone to be visible."
@@ -70,6 +74,10 @@ test_cases:
     resolutions:
       - [1600, 900]
     actions:
+      # Step 1: Ensure a clean state by clearing any previous session
+      - type: "clear_session"
+        description: "Clear the session to ensure the splash screen is shown."
+
       # Prerequisite: Load the main dashboard
       - type: "wait_for_selector"
         selector: "dropZone"
@@ -82,10 +90,10 @@ test_cases:
 
       # Step 1: Click the action button for a specific tag
       - type: "wait_for_selector"
-        selector: "button[data-tag-name='test_db.xml.TestInt']"
+        selector: "testIntActionButton"
         description: "Wait for the action button for TestInt to be available."
       - type: "click"
-        selector: "button[data-tag-name='test_db.xml.TestInt']"
+        selector: "testIntActionButton"
         description: "Click the action button for the 'TestInt' tag."
 
       # Step 2: Verify Tag Actions modal appears

@@ -58,6 +58,11 @@ for (const testCase of testCases.test_cases) {
             case 'evaluate':
               await page.evaluate(action.script);
               break;
+            case 'clear_session':
+              await page.evaluate(() => window.api.clearSession());
+              // After clearing the session, we need to reload the app for it to take effect
+              await page.reload();
+              break;
             case 'wait':
               await page.waitForTimeout(action.duration);
               break;
