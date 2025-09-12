@@ -162,7 +162,16 @@ async function pollMainData() {
     if (!plcApiInstance || !plcApiInstance.sessionId || activePollingTags.length === 0) return;
 
     try {
-        const responses = await plcApiInstance.readMultipleVariables(activePollingTags);
+        const [tagResponses, syslogResult] = await Promise.all([
+            plcApiInstance.readMultipleVariables(activePollingTags),
+            plcApiInstance.browseDiagnosticBuffer()
+        ]);
+
+        if (syslogResult && Array.isArray(syslogResult.entries)) {
+            store.setState({ syslogEntries: syslogResult.entries });
+        }
+
+        const responses = tagResponses;
         let currentLiveValues = { ...store.getState().liveValues };
         let currentActiveTags = [...activePollingTags];
 
@@ -216,6 +225,14 @@ async function pollMainData() {
             plcState: { ...store.getState().plcState, connected: true, ip: plcApiInstance.config.plcIp, sessionId: plcApiInstance.sessionId }
         });
 
+        // --- Send Data to Viewers ---
+        const { viewerWindows, syslogEntries } = store.getState();
+        const syslogWin = viewerWindows.syslog;
+
+        if (syslogWin && !syslogWin.isDestroyed() && syslogEntries && syslogEntries.length > 0) {
+            syslogWin.webContents.send('log-update', syslogEntries);
+        }
+
     } catch (error) {
         let { pollingErrorCount } = store.getState();
         pollingErrorCount++;
@@ -253,6 +270,7 @@ app.whenReady().then(async () => {
         viewerWindows: {},
         plottedTags: [],
         loggedTags: [], // Added this
+        syslogEntries: [],
         mockAlarms: [],
         activePollingTags: [],
         pollingErrorCount: 0,

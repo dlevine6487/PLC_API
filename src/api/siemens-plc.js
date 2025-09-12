@@ -115,6 +115,27 @@ class SiemensPLC_API {
         }
     }
 
+    async browseDiagnosticBuffer() {
+        if (!this.sessionId) return null;
+        const request = {
+            jsonrpc: "2.0",
+            method: "DiagnosticBuffer.Browse",
+            params: {}, // Assuming no params are needed as none are documented for browse
+            id: String(this.requestId++)
+        };
+        try {
+            const response = await this._sendRequest(request);
+            if (response.error) {
+                console.error("[PLC API] ERROR: Failed to browse diagnostic buffer.", response.error.message);
+                return null;
+            }
+            return response.result;
+        } catch (error) {
+            console.error("[PLC API] CRITICAL ERROR: Diagnostic buffer browse request failed.", error.message);
+            return null;
+        }
+    }
+
     async logout() {
         if (!this.sessionId) return;
         const request = { jsonrpc: "2.0", method: "Api.Logout", id: String(this.requestId++) };
