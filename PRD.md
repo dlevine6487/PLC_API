@@ -31,14 +31,17 @@ The following features are the core deliverables for this version, prioritized b
 ### 3.1. Priority 1: Configuration Persistence
 
 The application must automatically save the last used tag configuration to a `session.json` file located in the user's data directory. On subsequent launches, if this file exists, the application will load it and bypass the splash screen, taking the user directly to the dashboard. A "Load New Files" button on the dashboard will allow the user to clear this saved session and return to the splash screen to load a new configuration.
+*   **Status:** ✅ **Implemented.**
 
 ### 3.2. Priority 2: Externalize Credentials
 
 Hardcoded PLC credentials must be removed from the `main.js` source code. A `plc-config.json` file will be created in the user's data directory to store the default username and password. The application will read from this file for authentication.
+*   **Status:** ✅ **Implemented.**
 
 ### 3.3. Priority 3: Optimize Data Polling
 
 The data polling mechanism in `main.js` must be refactored to use a bulk request. Instead of reading tags one by one, all tags will be grouped into a single JSON-RPC request array and sent to the PLC in one API call per polling cycle to improve performance.
+*   **Status:** ✅ **Implemented.**
 
 ### 3.4. Priority 4: Enhance User Feedback & Interaction
 
