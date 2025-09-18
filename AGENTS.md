@@ -112,3 +112,5 @@ VPNs (Virtual Private Networks): Use VPNs for private APIs that should only be a
 Prevent CSRF (Cross-Site Request Forgery): Use CSRF tokens to verify the legitimacy of requests.
 
 Prevent XSS (Cross-Site Scripting): Implement proper input validation and sanitization to prevent the injection of malicious scripts.
+
+Finish by Reading the Prompt.md files, and train yourself on any documentation found in the GIT before starting to review code. 
